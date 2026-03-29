@@ -180,11 +180,12 @@ function Header({ currentView, onNavigate, userProfile, onLogout }) {
   );
 }
 
-function HomeView({ onNavigate, stats }) {
+function HomeView({ onNavigate, stats, userProfile }) {
+  const nomeUtente = userProfile?.nome ? userProfile.nome : "";
   return (
     <div className="p-5 space-y-5">
       <div className="text-center py-4">
-        <h2 className="text-2xl font-bold text-gray-800">Ciao! 👋</h2>
+        <h2 className="text-2xl font-bold text-gray-800">{nomeUtente ? `Ciao ${nomeUtente}! 👋` : "Ciao! 👋"}</h2>
         <p className="text-gray-500 mt-1">Cosa vuoi fare oggi?</p>
       </div>
 
@@ -232,6 +233,8 @@ function HomeView({ onNavigate, stats }) {
 // ========== PROFILO AZIENDA ==========
 function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
   const [form, setForm] = useState({
+    nome: userProfile?.nome || "",
+    cognome: userProfile?.cognome || "",
     nomeAzienda: userProfile?.nomeAzienda || "",
     email: userProfile?.email || "",
     telefono: userProfile?.telefono || "",
@@ -312,6 +315,25 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         </div>
         <p className="text-xs text-gray-400 mt-2">Formati: JPG, PNG. Max 2MB. Apparirà nell'intestazione del PDF.</p>
+      </div>
+
+      {/* Dati personali */}
+      <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+        <p className="text-xs text-gray-400 font-medium">DATI PERSONALI</p>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            value={form.nome}
+            onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
+            placeholder="Nome"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
+          />
+          <input
+            value={form.cognome}
+            onChange={e => setForm(f => ({ ...f, cognome: e.target.value }))}
+            placeholder="Cognome"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
+          />
+        </div>
       </div>
 
       {/* Dati azienda */}
@@ -2184,6 +2206,8 @@ export default function App({ session }) {
         const { data: profileData } = await supabase.from("profiles").select("*").eq("id", userId).single();
         if (profileData) {
           setUserProfile({
+            nome: profileData.nome || "",
+            cognome: profileData.cognome || "",
             nomeAzienda: profileData.nome_azienda || "",
             email: profileData.email || "",
             telefono: profileData.telefono || "",
@@ -2222,7 +2246,7 @@ export default function App({ session }) {
     if (!session?.user?.id) return;
     setUserProfile(profile);
     await supabase.from("profiles").upsert({
-      id: session.user.id, nome_azienda: profile.nomeAzienda, email: profile.email,
+      id: session.user.id, nome: profile.nome, cognome: profile.cognome, nome_azienda: profile.nomeAzienda, email: profile.email,
       telefono: profile.telefono, indirizzo: profile.indirizzo, piva: profile.piva,
       logo: profile.logo, updated_at: new Date().toISOString(),
     });
@@ -2282,7 +2306,7 @@ export default function App({ session }) {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
         <Header currentView={currentView} onNavigate={setCurrentView} userProfile={userProfile} onLogout={handleLogout} />
 
-        {currentView === "home" && <HomeView onNavigate={setCurrentView} stats={stats} />}
+        {currentView === "home" && <HomeView onNavigate={setCurrentView} stats={stats} userProfile={userProfile} />}
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
         {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} />}
         {currentView === "modifica" && editingQuote && (
