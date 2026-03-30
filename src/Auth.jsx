@@ -117,7 +117,7 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="text-5xl mb-3">\u{1F3D7}\u{FE0F}</div>
+          <div className="text-5xl mb-3">🏗️</div>
           <h1 className="text-2xl font-bold text-gray-800">Preventivo Intelligente</h1>
           <p className="text-gray-500 text-sm mt-1">Crea preventivi edili professionali con l'AI</p>
         </div>
