@@ -151,38 +151,39 @@ const LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/4QC8RXhp
 function Header({ currentView, onNavigate, userProfile, onLogout }) {
   const logoSrc = userProfile?.logo || LOGO_BASE64;
   const nomeAzienda = userProfile?.nomeAzienda || "Protocollo Edile";
+  const [showMenu, setShowMenu] = useState(false);
   return (
-    <div className="bg-gradient-to-r from-orange-600 to-orange-500 text-white p-4 rounded-t-2xl">
+    <div className="bg-gradient-to-r from-orange-600 to-orange-500 text-white p-4 safe-top">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {currentView !== "home" && (
-            <button onClick={() => onNavigate("home")} className="p-1 hover:bg-white/20 rounded-lg transition">
-              <ArrowLeft size={20} />
-            </button>
-          )}
-          <img src={logoSrc} alt={nomeAzienda} className="w-10 h-10 rounded-lg object-cover" />
+          <img src={logoSrc} alt="Logo" className="w-10 h-10 rounded-lg object-contain bg-white" />
           <div>
-            <h1 className="text-xl font-bold tracking-tight">{nomeAzienda}</h1>
-            <p className="text-orange-100 text-xs">Preventivo Intelligente</p>
+            <h1 className="text-lg font-bold">{nomeAzienda}</h1>
+            <p className="text-xs opacity-80">Preventivo Intelligente</p>
           </div>
         </div>
-        <button onClick={() => onNavigate("profilo")} className="p-2 hover:bg-white/20 rounded-lg transition" title="Profilo Azienda">
-          {userProfile?.nomeAzienda ? (
-            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">
-              {userProfile.nomeAzienda.charAt(0).toUpperCase()}
+        <div className="relative">
+          <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-white/20 rounded-lg transition" title="Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>
+          {showMenu && (
+            <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg py-1 min-w-[180px] z-50">
+              <button onClick={() => { onNavigate("profilo"); setShowMenu(false); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Profilo Azienda
+              </button>
+              <div className="border-t border-gray-100"></div>
+              <button onClick={() => { onLogout(); setShowMenu(false); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Esci
+              </button>
             </div>
-          ) : (
-            <User size={20} />
           )}
-        </button>
-        <button onClick={onLogout} className="p-2 hover:bg-white/20 rounded-lg transition" title="Esci">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </button>
+        </div>
       </div>
     </div>
   );
 }
-
 function HomeView({ onNavigate, stats, userProfile }) {
   const nomeUtente = userProfile?.nome ? userProfile.nome : "";
   return (
