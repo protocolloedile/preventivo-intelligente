@@ -2,6 +2,24 @@ import { useState } from "react";
 import { supabase } from "./supabaseClient";
 import { Mail, Eye, EyeOff, LogIn, UserPlus, ArrowLeft, Building2, User, Phone, MapPin, FileText } from "lucide-react";
 
+// InputField defined OUTSIDE Auth to prevent focus loss on re-renders
+const InputField = ({ icon: Icon, label, type = "text", value, onChange, placeholder, maxLength }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <div className="relative">
+      <Icon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-sm"
+      />
+    </div>
+  </div>
+);
+
 export default function Auth() {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -10,6 +28,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
   // Registration fields
   const [regNome, setRegNome] = useState("");
   const [regCognome, setRegCognome] = useState("");
@@ -39,17 +58,23 @@ export default function Auth() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(""); setMessage(""); setLoading(true);
+    setError("");
+    setMessage("");
+    setLoading(true);
     try {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) throw err;
-    } catch (err) { setError(err.message); }
+    } catch (err) {
+      setError(err.message);
+    }
     setLoading(false);
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setError(""); setMessage(""); setLoading(true);
+    setError("");
+    setMessage("");
+    setLoading(true);
     try {
       if (!regNome || !regCognome || !regAzienda || !regPiva || !regCF || !regTelefono || !regIndirizzo) {
         throw new Error("Compila tutti i campi obbligatori");
@@ -62,11 +87,11 @@ export default function Auth() {
       }
       const cfUnique = await checkUniqueness("codice_fiscale", regCF.toUpperCase());
       if (!cfUnique) {
-        throw new Error("Esiste gi\u00E0 un account con questo Codice Fiscale.");
+        throw new Error("Esiste già un account con questo Codice Fiscale.");
       }
       const pivaUnique = await checkUniqueness("piva", regPiva.trim());
       if (!pivaUnique) {
-        throw new Error("Esiste gi\u00E0 un account con questa Partita IVA.");
+        throw new Error("Esiste già un account con questa Partita IVA.");
       }
       const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
       if (signUpError) throw signUpError;
@@ -87,31 +112,28 @@ export default function Auth() {
       }
       setMessage("Registrazione completata! Controlla la tua email per confermare l'account.");
       setMode("login");
-    } catch (err) { setError(err.message); }
+    } catch (err) {
+      setError(err.message);
+    }
     setLoading(false);
   };
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
-    setError(""); setMessage(""); setLoading(true);
+    setError("");
+    setMessage("");
+    setLoading(true);
     try {
-      const { error: err } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin
+      });
       if (err) throw err;
       setMessage("Email di recupero inviata! Controlla la tua casella.");
-    } catch (err) { setError(err.message); }
+    } catch (err) {
+      setError(err.message);
+    }
     setLoading(false);
   };
-
-  const InputField = ({ icon: Icon, label, type = "text", value, onChange, placeholder, maxLength }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <div className="relative">
-        <Icon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input type={type} value={value} onChange={onChange} placeholder={placeholder} maxLength={maxLength}
-          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-sm" />
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center p-4">
@@ -121,11 +143,18 @@ export default function Auth() {
           <h1 className="text-2xl font-bold text-gray-800">Preventivo Intelligente</h1>
           <p className="text-gray-500 text-sm mt-1">Crea preventivi edili professionali con l'AI</p>
         </div>
+
         <div className="bg-white rounded-2xl shadow-lg p-6">
           {mode !== "forgot" && (
             <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-              <button onClick={() => { setMode("login"); setError(""); setMessage(""); }} className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition ${mode === "login" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500"}`}>Accedi</button>
-              <button onClick={() => { setMode("register"); setError(""); setMessage(""); setRegStep(1); }} className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition ${mode === "register" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500"}`}>Registrati</button>
+              <button
+                onClick={() => { setMode("login"); setError(""); setMessage(""); }}
+                className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition ${mode === "login" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500"}`}
+              >Accedi</button>
+              <button
+                onClick={() => { setMode("register"); setError(""); setMessage(""); setRegStep(1); }}
+                className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition ${mode === "register" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500"}`}
+              >Registrati</button>
             </div>
           )}
 
@@ -138,8 +167,13 @@ export default function Auth() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <div className="relative">
-                  <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="La tua password"
-                    className="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-sm" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="La tua password"
+                    className="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-sm"
+                  />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -166,9 +200,18 @@ export default function Auth() {
                   <InputField icon={MapPin} label="Indirizzo *" value={regIndirizzo} onChange={(e) => setRegIndirizzo(e.target.value)} placeholder="Via Roma 1, Milano" />
                   <button type="button" onClick={() => {
                     setError("");
-                    if (!regNome || !regCognome || !regAzienda || !regPiva || !regCF || !regTelefono || !regIndirizzo) { setError("Compila tutti i campi obbligatori"); return; }
-                    if (!validatePIVA(regPiva)) { setError("Partita IVA non valida (11 cifre)"); return; }
-                    if (!validateCF(regCF)) { setError("Codice Fiscale non valido (16 caratteri alfanumerici)"); return; }
+                    if (!regNome || !regCognome || !regAzienda || !regPiva || !regCF || !regTelefono || !regIndirizzo) {
+                      setError("Compila tutti i campi obbligatori");
+                      return;
+                    }
+                    if (!validatePIVA(regPiva)) {
+                      setError("Partita IVA non valida (11 cifre)");
+                      return;
+                    }
+                    if (!validateCF(regCF)) {
+                      setError("Codice Fiscale non valido (16 caratteri alfanumerici)");
+                      return;
+                    }
                     setRegStep(2);
                   }} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-xl transition">Continua</button>
                 </>
@@ -181,8 +224,13 @@ export default function Auth() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
                     <div className="relative">
-                      <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimo 6 caratteri"
-                        className="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-sm" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Minimo 6 caratteri"
+                        className="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-sm"
+                      />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
@@ -206,6 +254,7 @@ export default function Auth() {
             </form>
           )}
         </div>
+
         <p className="text-center text-xs text-gray-400 mt-4">©2026 Protocollo Edile™</p>
       </div>
     </div>
