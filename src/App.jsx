@@ -769,12 +769,12 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
           </select>
         )}
         <input value={clientInfo.nome} onChange={(e) => setClientInfo({ ...clientInfo, nome: e.target.value })} placeholder="Nome cliente *" className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
-        <input value={clientInfo.indirizzo} onChange={(e) => setClientInfo({ ...clientInfo, indirizzo: e.target.value })} placeholder="Indirizzo" className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
+        <input value={clientInfo.indirizzo} onChange={(e) => setClientInfo({ ...clientInfo, indirizzo: e.target.value })} placeholder="Indirizzo *" className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
         <div className="grid grid-cols-2 gap-2">
-          <input value={clientInfo.telefono} onChange={(e) => setClientInfo({ ...clientInfo, telefono: e.target.value })} placeholder="Telefono/WhatsApp" className="p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
-          <input value={clientInfo.email || ""} onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })} placeholder="Email" className="p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
+          <input value={clientInfo.telefono} onChange={(e) => setClientInfo({ ...clientInfo, telefono: e.target.value })} placeholder="Telefono/WhatsApp *" className="p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
+          <input value={clientInfo.email || ""} onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })} placeholder="Email *" className="p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
         </div>
-        <input value={clientInfo.codiceFiscale || ""} onChange={(e) => setClientInfo({ ...clientInfo, codiceFiscale: e.target.value })} placeholder="Codice Fiscale / P.IVA" className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
+        <input value={clientInfo.codiceFiscale || ""} onChange={(e) => setClientInfo({ ...clientInfo, codiceFiscale: e.target.value })} placeholder="Codice Fiscale / P.IVA *" className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
       </div>
 
       {/* SCADENZA PREVENTIVO */}
@@ -1931,7 +1931,7 @@ function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadP
   const [photos, setPhotos] = useState(isEditing ? (initialData.photos || []) : []);
   const [descrizione, setDescrizione] = useState(isEditing ? (initialData.descrizione || "") : "");
   const [firmaImpresa, setFirmaImpresa] = useState(isEditing ? (initialData.firmaImpresa || "") : (userProfile?.nomeAzienda || ""));
-  const [luogoFirma, setLuogoFirma] = useState(isEditing ? (initialData.luogoFirma || "") : (userProfile?.indirizzo ? userProfile.indirizzo.split(",").pop().trim() : ""));
+  const [luogoFirma, setLuogoFirma] = useState(isEditing ? (initialData.luogoFirma || "") : (""));
 
   const handleTranscript = (text) => {
     setTranscript(text);
@@ -2234,17 +2234,6 @@ function generatePDF(quote, userProfile, returnBlob = false) {
 </body></html>`;
 
   // Genera PDF reale con html2pdf.js
-  const container = document.createElement("div");
-  container.innerHTML = html;
-  container.style.position = "absolute";
-  container.style.left = "0";
-  container.style.top = "0";
-  container.style.width = "800px";
-  container.style.zIndex = "-9999";
-  container.style.opacity = "0";
-  container.style.pointerEvents = "none";
-  document.body.appendChild(container);
-
   const loadScript = (src) => new Promise((resolve, reject) => {
     if (document.querySelector('script[src="' + src + '"]')) { resolve(); return; }
     const s = document.createElement("script");
@@ -2256,28 +2245,22 @@ function generatePDF(quote, userProfile, returnBlob = false) {
 
   const nomeFile = "Preventivo_" + (quote.cliente || "Cliente").replace(/\s+/g, "_") + "_" + (quote.data ? quote.data.replace(/\//g, "-") : "oggi") + ".pdf";
 
-  loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js").then(() => {
+  const pdfPromise = loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js").then(() => {
     const opt = {
       margin: [10, 10, 10, 10],
       filename: nomeFile,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 800 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       pagebreak: { mode: ["css", "legacy"] }
     };
-    const worker = window.html2pdf().set(opt).from(container);
+    const worker = window.html2pdf().set(opt).from(html, 'string');
     if (returnBlob) {
-      return worker.toPdf().output('blob').then(blob => {
-        document.body.removeChild(container);
-        return blob;
-      });
+      return worker.toPdf().output('blob');
     }
     return worker.save();
-  }).then(() => {
-    document.body.removeChild(container);
   }).catch((err) => {
     console.error("PDF generation error:", err);
-    try { document.body.removeChild(container); } catch(e) {}
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -2288,7 +2271,9 @@ function generatePDF(quote, userProfile, returnBlob = false) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
+  return pdfPromise;
 }
+
 
 // ========== MAIN APP ==========
 export default function App({ session }) {
