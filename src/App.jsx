@@ -195,7 +195,7 @@ function HomeView({ onNavigate, stats, userProfile }) {
 
       <button onClick={() => {
         const p = userProfile || {};
-        if (!p.nome || !p.cognome || !p.nomeAzienda || !p.partitaIva || !p.email || !p.telefono || !p.indirizzo) {
+        if (!p.nome || !p.cognome || !p.nomeAzienda || !p.piva || !p.email || !p.telefono || !p.indirizzo) {
           alert("Completa il tuo profilo prima di creare un preventivo. Vai su Profilo Azienda e compila tutti i campi obbligatori (Nome, Cognome, Nome Azienda, P.IVA, Email, Telefono, Indirizzo).");
           onNavigate("profilo");
           return;
@@ -289,6 +289,10 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
 
   return (
     <div className="p-5 space-y-4">
+      <button onClick={() => onNavigate("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2">
+        <ArrowLeft size={20} />
+        <span className="text-sm">Indietro</span>
+      </button>
       <div className="text-center py-2">
         <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
           <Building2 size={32} className="text-orange-500" />
@@ -2428,9 +2432,9 @@ export default function App({ session }) {
             userProfile={userProfile}
           />
         )}
-        {currentView === "database" && <PriceDatabase prices={prices} setPrices={setPrices} />}
+        {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={setPrices} /></div>}
         {currentView === "clienti" && <ClientDatabase clients={clients} setClients={setClients} />}
-        {currentView === "storico" && <StoricoView quotes={quotes} onViewQuote={handleViewQuote} />}
+        {currentView === "storico" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><StoricoView quotes={quotes} onViewQuote={handleViewQuote} /></div>}
         {currentView === "dettaglio" && selectedQuote && (
           <QuoteDetailView
             quote={selectedQuote}
