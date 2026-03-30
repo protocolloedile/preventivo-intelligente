@@ -2222,10 +2222,13 @@ function generatePDF(quote, userProfile) {
   // Genera PDF reale con html2pdf.js
   const container = document.createElement("div");
   container.innerHTML = html;
-  container.style.position = "fixed";
-  container.style.left = "-9999px";
+  container.style.position = "absolute";
+  container.style.left = "0";
   container.style.top = "0";
   container.style.width = "800px";
+  container.style.zIndex = "-9999";
+  container.style.opacity = "0";
+  container.style.pointerEvents = "none";
   document.body.appendChild(container);
 
   const loadScript = (src) => new Promise((resolve, reject) => {
@@ -2244,15 +2247,16 @@ function generatePDF(quote, userProfile) {
       margin: [10, 10, 10, 10],
       filename: nomeFile,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 800 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+      pagebreak: { mode: ["css", "legacy"] }
     };
-    html2pdf().set(opt).from(container).save().then(() => {
-      document.body.removeChild(container);
-    });
-  }).catch(() => {
+    return window.html2pdf().set(opt).from(container).save();
+  }).then(() => {
     document.body.removeChild(container);
+  }).catch((err) => {
+    console.error("PDF generation error:", err);
+    try { document.body.removeChild(container); } catch(e) {}
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
