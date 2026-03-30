@@ -2299,6 +2299,20 @@ export default function App({ session }) {
             piva: profileData.piva || "",
             logo: profileData.logo || "",
           });
+        // Carica stato abbonamento
+        const subStatus = profileData.subscription_status || "none";
+        if (subStatus === "trialing" && profileData.trial_end) {
+          const trialEndDate = new Date(profileData.trial_end);
+          if (trialEndDate < new Date()) {
+            await supabase.from("profiles").update({ subscription_status: "expired" }).eq("id", userId);
+            setSubscriptionStatus("expired");
+          } else {
+            setSubscriptionStatus("trialing");
+          }
+        } else {
+          setSubscriptionStatus(subStatus);
+        }
+
         }
 
         const { data: clientsData } = await supabase.from("clients").select("*").eq("user_id", userId).order("created_at", { ascending: false });
@@ -2406,7 +2420,7 @@ export default function App({ session }) {
     } catch (err) { alert("Errore durante il checkout. Riprova."); }
   };
 
-  if (dataLoaded && !isSubscribed && subscriptionStatus !== null) {
+  if (dataLoaded && !isSubscribed) {
     return <PricingPage onSubscribe={handleSubscribe} onLogout={handleLogout} userEmail={session?.user?.email} />;
   }
 
