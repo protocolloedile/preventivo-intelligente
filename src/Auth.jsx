@@ -206,7 +206,7 @@ export default function Auth() {
             </form>
           )}
         </div>
-        <p className="text-center text-xs text-gray-400 mt-4">Preventivo Intelligente \u00A9 2025</p>
+        <p className="text-center text-xs text-gray-400 mt-4">©2026 Protocollo Edile™</p>
       </div>
     </div>
   );
