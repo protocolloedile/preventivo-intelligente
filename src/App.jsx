@@ -276,6 +276,7 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
       return;
     }
     setUserProfile({ ...form });
+          setSubscriptionStatus(profileData.subscription_status || "none");
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -1564,32 +1565,91 @@ function ClientDatabase({ clients, setClients }) {
 }
 
 // ========== SHARE / INOLTRA PREVENTIVO ==========
-function ShareButton({ quote }) {
+function PricingPage({ onSubscribe, onLogout, userEmail }) {
+  const [promoCode, setPromoCode] = useState("");
+  const [promoError, setPromoError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handlePromo = () => {
+    if (promoCode.trim().toUpperCase() === "PROVA14") {
+      setLoading(true);
+      onSubscribe("PROVA14");
+    } else {
+      setPromoError("Codice non valido");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="text-4xl mb-2">🏗️</div>
+          <h1 className="text-3xl font-bold text-gray-800">Preventivo Intelligente</h1>
+          <p className="text-gray-500 mt-2">Scegli il tuo piano per iniziare</p>
+          {userEmail && <p className="text-xs text-gray-400 mt-1">{userEmail}</p>}
+        </div>
+        <div className="bg-white rounded-2xl shadow-xl border-2 border-orange-400 overflow-hidden">
+          <div className="bg-orange-500 text-white text-center py-3 font-bold text-lg">Piano Pro</div>
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <span className="text-5xl font-bold text-gray-800">\u20AC47</span>
+              <span className="text-gray-500">/mese</span>
+            </div>
+            <ul className="space-y-3 mb-6">
+              {["Preventivi illimitati", "Generazione PDF professionale", "Invio WhatsApp ed Email", "Prompt vocale AI", "Gestione clienti", "Prezzario personalizzabile", "Aggiornamenti continui", "Supporto prioritario"].map((f, i) => (
+                <li key={i} className="flex items-center gap-2 text-gray-700">
+                  <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => { setLoading(true); onSubscribe(null); }} disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition disabled:opacity-50">
+              {loading ? "Reindirizzamento..." : "Abbonati ora"}
+            </button>
+            <div className="mt-4 border-t pt-4">
+              <p className="text-sm text-gray-500 text-center mb-2">Hai un codice promozionale?</p>
+              <div className="flex gap-2">
+                <input type="text" value={promoCode} onChange={(e) => { setPromoCode(e.target.value); setPromoError(""); }} placeholder="Inserisci codice" className="flex-1 border rounded-lg px-3 py-2 text-sm"/>
+                <button onClick={handlePromo} className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition">Applica</button>
+              </div>
+              {promoError && <p className="text-red-500 text-xs mt-1">{promoError}</p>}
+            </div>
+          </div>
+        </div>
+        <button onClick={onLogout} className="w-full mt-4 text-gray-400 hover:text-gray-600 text-sm py-2 transition">Esci dall'account</button>
+      </div>
+    </div>
+  );
+}
+
+function ShareButton({ quote, onDownloadPDF }) {
   const [showOptions, setShowOptions] = useState(false);
 
   const buildMessage = () => {
-    const cliente = quote.cliente || "Cliente";
-    const totale = (quote.totale || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 });
-    const data = quote.data || new Date().toLocaleDateString("it-IT");
-    const voci = quote.items?.length || 0;
-    return `Preventivo Protocollo Edile\n\nCliente: ${cliente}\nData: ${data}\nVoci: ${voci}\nTotale: € ${totale}\n\nPreventivo generato con Protocollo Edile - Preventivo Intelligente`;
+    const nomeCliente = quote.clientInfo?.nome || quote.cliente || "Cliente";
+    return `Salve ${nomeCliente}! Come anticipato durante il nostro sopralluogo, le invio in allegato il preventivo dettagliato per gli interventi di cui abbiamo discusso.`;
   };
 
   const handleWhatsApp = () => {
-    const msg = encodeURIComponent(buildMessage());
-    const numero = quote.clientInfo?.telefono || quote.clientInfo?.whatsapp || "";
-    const cleanNum = numero.replace(/\D/g, "");
-    const url = cleanNum ? `https://wa.me/${cleanNum}?text=${msg}` : `https://wa.me/?text=${msg}`;
-    window.open(url, "_blank");
-    setShowOptions(false);
+    if (onDownloadPDF) onDownloadPDF(quote);
+    setTimeout(() => {
+      const msg = encodeURIComponent(buildMessage());
+      const numero = quote.clientInfo?.telefono || quote.clientInfo?.whatsapp || "";
+      const cleanNum = numero.replace(/\D/g, "");
+      const url = cleanNum ? `https://wa.me/${cleanNum}?text=${msg}` : `https://wa.me/?text=${msg}`;
+      window.open(url, "_blank");
+    }, 1000);
   };
 
   const handleEmail = () => {
-    const subject = encodeURIComponent(`Preventivo - ${quote.cliente || "Cliente"}`);
-    const body = encodeURIComponent(buildMessage());
-    const email = quote.clientInfo?.email || "";
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank");
-    setShowOptions(false);
+    if (onDownloadPDF) onDownloadPDF(quote);
+    setTimeout(() => {
+      const nomeCliente = quote.clientInfo?.nome || quote.cliente || "Cliente";
+      const subject = encodeURIComponent(`Preventivo - ${nomeCliente}`);
+      const body = encodeURIComponent(buildMessage());
+      const email = quote.clientInfo?.email || "";
+      window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank");
+    }, 1000);
   };
 
   return (
@@ -1766,7 +1826,7 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit }) {
         </button>
       )}
 
-      <ShareButton quote={quote} />
+      <ShareButton quote={quote} onDownloadPDF={onDownloadPDF} />
 
       <p className="text-center text-xs text-gray-400">
         Preventivo valido 30 giorni dalla data di emissione
@@ -1973,7 +2033,7 @@ function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadP
               </button>
             )}
             {lastSavedQuote && (
-              <ShareButton quote={lastSavedQuote} />
+              <ShareButton quote={lastSavedQuote} onDownloadPDF={onDownloadPDF} />
             )}
             <button onClick={() => { setStep("voice"); setItems([]); setTranscript(""); setClientInfo({ nome: "", indirizzo: "", telefono: "" }); setDiscount({ enabled: false, tipo: "percentuale", valore: 0 }); setMargin({ enabled: false, tipo: "percentuale", valore: 20 }); setScadenza(defaultScadenza()); setPagamento([{fase:"Anticipo alla conferma",percentuale:35},{fase:"Metà lavori",percentuale:35},{fase:"Fine lavori",percentuale:30}]); setPhotos([]); setDescrizione(""); setFirmaImpresa(""); setLuogoFirma(""); setLastSavedQuote(null); }} className="w-full bg-white border-2 border-orange-500 text-orange-500 py-3 rounded-xl font-semibold">
               Crea un altro preventivo
@@ -2206,6 +2266,17 @@ export default function App({ session }) {
   const [editingQuote, setEditingQuote] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("subscription") === "success" && session?.user?.id) {
+      supabase.from("profiles").update({ subscription_status: "active" }).eq("id", session.user.id).then(() => {
+        setSubscriptionStatus("active");
+        window.history.replaceState({}, "", window.location.pathname);
+      });
+    }
+  }, [session]);
 
   // ---- Caricamento dati da Supabase all'avvio ----
   useEffect(() => {
@@ -2311,6 +2382,31 @@ export default function App({ session }) {
     totalQuotes: quotes.length,
     totalClients: clients.length
   };
+
+  const isSubscribed = subscriptionStatus === "active" || subscriptionStatus === "trialing";
+
+  const handleSubscribe = async (promoCode) => {
+    if (promoCode === "PROVA14") {
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 14);
+      const { error } = await supabase.from("profiles").update({ subscription_status: "trialing", trial_end: trialEnd.toISOString() }).eq("id", session.user.id);
+      if (!error) { setSubscriptionStatus("trialing"); }
+      return;
+    }
+    try {
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: session.user.id, email: session.user.email })
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch (err) { alert("Errore durante il checkout. Riprova."); }
+  };
+
+  if (dataLoaded && !isSubscribed && subscriptionStatus !== null) {
+    return <PricingPage onSubscribe={handleSubscribe} onLogout={handleLogout} userEmail={session?.user?.email} />;
+  }
 
   return (
     <div className="bg-gray-100 min-h-screen flex items-start justify-center p-4">
