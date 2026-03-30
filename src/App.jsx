@@ -1597,11 +1597,11 @@ function PricingPage({ onSubscribe, onLogout, userEmail }) {
           <div className="bg-orange-500 text-white text-center py-3 font-bold text-lg">Piano Pro</div>
           <div className="p-6">
             <div className="text-center mb-6">
-              <span className="text-5xl font-bold text-gray-800">\u20AC47</span>
+              <span className="text-5xl font-bold text-gray-800">€47</span>
               <span className="text-gray-500">/mese</span>
             </div>
             <ul className="space-y-3 mb-6">
-              {["Preventivi illimitati", "Generazione PDF professionale", "Invio WhatsApp ed Email", "Prompt vocale AI", "Gestione clienti", "Prezzario personalizzabile", "Aggiornamenti continui", "Supporto prioritario"].map((f, i) => (
+              {["Preventivi illimitati", "Generazione PDF professionale", "Invio WhatsApp ed Email", "Prompt vocale AI", "Gestione clienti", "Prezzario personalizzabile", "Aggiornamenti continui", "Supporto prioritario", "Supporto WhatsApp 7/7"].map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-gray-700">
                   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
                   {f}
