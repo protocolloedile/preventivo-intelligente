@@ -184,7 +184,7 @@ function Header({ currentView, onNavigate, userProfile, onLogout }) {
     </div>
   );
 }
-function HomeView({ onNavigate, stats, userProfile }) {
+function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus, onShowPricing }) {
   const nomeUtente = userProfile?.nome ? userProfile.nome : "";
   return (
     <div className="p-5 space-y-5">
@@ -238,7 +238,14 @@ function HomeView({ onNavigate, stats, userProfile }) {
           <li>3. Modifica se serve, poi scarica il PDF</li>
         </ol>
       </div>
-    </div>
+    
+      {subscriptionStatus === "trialing" && trialEnd && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center space-y-2">
+          <p className="text-sm text-gray-600">Il tuo abbonamento gratuito scadrà il <span className="font-bold text-orange-600">{new Date(trialEnd).toLocaleDateString("it-IT")}</span></p>
+          <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Abbonati ora a €47/mese →</button>
+        </div>
+      )}
+</div>
   );
 }
 
@@ -2269,6 +2276,8 @@ export default function App({ session }) {
   const [userProfile, setUserProfile] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [trialEnd, setTrialEnd] = useState(null);
+  const [showPricing, setShowPricing] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2308,6 +2317,7 @@ export default function App({ session }) {
             setSubscriptionStatus("expired");
           } else {
             setSubscriptionStatus("trialing");
+            setTrialEnd(profileData.trial_end);
           }
         } else {
           setSubscriptionStatus(subStatus);
@@ -2420,7 +2430,7 @@ export default function App({ session }) {
     } catch (err) { alert("Errore durante il checkout. Riprova."); }
   };
 
-  if (dataLoaded && !isSubscribed) {
+  if (dataLoaded && (!isSubscribed || showPricing)) {
     return <PricingPage onSubscribe={handleSubscribe} onLogout={handleLogout} userEmail={session?.user?.email} />;
   }
 
@@ -2429,7 +2439,7 @@ export default function App({ session }) {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
         <Header currentView={currentView} onNavigate={setCurrentView} userProfile={userProfile} onLogout={handleLogout} />
 
-        {currentView === "home" && <HomeView onNavigate={setCurrentView} stats={stats} userProfile={userProfile} />}
+        {currentView === "home" && <HomeView onNavigate={setCurrentView} stats={stats} userProfile={userProfile} trialEnd={trialEnd} subscriptionStatus={subscriptionStatus} onShowPricing={() => setShowPricing(true)} />}
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
         {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} userProfile={userProfile} />}
         {currentView === "modifica" && editingQuote && (
