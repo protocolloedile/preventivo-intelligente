@@ -1634,7 +1634,7 @@ function PricingPage({ onSubscribe, onLogout, userEmail }) {
   );
 }
 
-function ShareButton({ quote, onDownloadPDF }) {
+function ShareButton({ quote, onDownloadPDF, onGeneratePDFBlob }) {
   const [showOptions, setShowOptions] = useState(false);
 
   const buildMessage = () => {
@@ -1642,18 +1642,32 @@ function ShareButton({ quote, onDownloadPDF }) {
     return `Salve ${nomeCliente}! Come anticipato durante il nostro sopralluogo, le invio in allegato il preventivo dettagliato per gli interventi di cui abbiamo discusso.`;
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
+    const msg = buildMessage();
+    const numero = quote.clientInfo?.telefono || quote.clientInfo?.whatsapp || "";
+    const cleanNum = numero.replace(/\D/g, "");
+
+    // Try Web Share API with PDF file (mobile + some desktop)
+    if (navigator.share && onGeneratePDFBlob) {
+      try {
+        const blob = await onGeneratePDFBlob(quote);
+        const nomeFile = "Preventivo_" + (quote.cliente || "Cliente").replace(/\s+/g, "_") + ".pdf";
+        const file = new File([blob], nomeFile, { type: "application/pdf" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ text: msg, files: [file] });
+          return;
+        }
+      } catch(e) { console.log("Web Share fallback", e); }
+    }
+
+    // Fallback: download PDF + WhatsApp text
     if (onDownloadPDF) onDownloadPDF(quote);
     setTimeout(() => {
-      const msg = encodeURIComponent(buildMessage());
-      const numero = quote.clientInfo?.telefono || quote.clientInfo?.whatsapp || "";
-      const cleanNum = numero.replace(/\D/g, "");
-      const url = cleanNum ? `https://wa.me/${cleanNum}?text=${msg}` : `https://wa.me/?text=${msg}`;
+      const encodedMsg = encodeURIComponent(msg);
+      const url = cleanNum ? `https://wa.me/${cleanNum}?text=${encodedMsg}` : `https://wa.me/?text=${encodedMsg}`;
       window.open(url, "_blank");
-    }, 1000);
-  };
-
-  const handleEmail = () => {
+    }, 1500);
+  };  const handleEmail = () => {
     if (onDownloadPDF) onDownloadPDF(quote);
     setTimeout(() => {
       const nomeCliente = quote.clientInfo?.nome || quote.cliente || "Cliente";
@@ -2061,7 +2075,7 @@ function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadP
 }
 
 // ========== PDF GENERATION ==========
-function generatePDF(quote, userProfile) {
+function generatePDF(quote, userProfile, returnBlob = false) {
   const subtotale = quote.subtotale || quote.items?.reduce((sum, item) => sum + item.quantita * item.prezzo, 0) || 0;
   const importoMargine = quote.importoMargine || 0;
   const importoSconto = quote.importoSconto || 0;
@@ -2251,7 +2265,14 @@ function generatePDF(quote, userProfile) {
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       pagebreak: { mode: ["css", "legacy"] }
     };
-    return window.html2pdf().set(opt).from(container).save();
+    const worker = window.html2pdf().set(opt).from(container);
+    if (returnBlob) {
+      return worker.toPdf().output('blob').then(blob => {
+        document.body.removeChild(container);
+        return blob;
+      });
+    }
+    return worker.save();
   }).then(() => {
     document.body.removeChild(container);
   }).catch((err) => {
@@ -2445,14 +2466,14 @@ export default function App({ session }) {
 
         {currentView === "home" && <HomeView onNavigate={setCurrentView} stats={stats} userProfile={userProfile} trialEnd={trialEnd} subscriptionStatus={subscriptionStatus} onShowPricing={() => setShowPricing(true)} />}
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
-        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} userProfile={userProfile} />}
+        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)} userProfile={userProfile} />}
         {currentView === "modifica" && editingQuote && (
           <NuovoPreventivo
             prices={prices}
             clients={clients}
             onSaveQuote={saveQuote}
             onNavigate={setCurrentView}
-            onDownloadPDF={(q) => generatePDF(q, userProfile)}
+            onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)}
             initialData={editingQuote}
             userProfile={userProfile}
           />
@@ -2464,7 +2485,7 @@ export default function App({ session }) {
           <QuoteDetailView
             quote={selectedQuote}
             onBack={() => setCurrentView("storico")}
-            onDownloadPDF={(q) => generatePDF(q, userProfile)}
+            onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)}
             onEdit={handleEditQuote}
           />
         )}
