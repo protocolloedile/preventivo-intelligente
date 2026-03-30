@@ -2131,10 +2131,7 @@ function generatePDF(quote, userProfile) {
 
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Preventivo - ${quote.cliente || "Cliente"}</title>
-<style>
-  @media print { body { margin: 0; } @page { margin: 15mm; size: A4; } }
-  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1F2937; max-width: 800px; margin: 0 auto; padding: 20px; }
-</style></head><body>
+<style> body { font-family: "Segoe UI", Arial, sans-serif; color: #1F2937; max-width: 800px; margin: 0 auto; padding: 20px; } </style></head><body>
   <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:20px;border-bottom:3px solid #EA580C;margin-bottom:24px;">
     <div style="display:flex;align-items:center;gap:14px;">
       ${aziendaLogo ? `<img src="${aziendaLogo}" style="width:60px;height:60px;border-radius:8px;object-fit:cover;" />` : ""}
@@ -2215,50 +2212,50 @@ function generatePDF(quote, userProfile) {
   </div>
 </body></html>`;
 
-  // Approccio 1: prova iframe nascosto (funziona nella maggior parte dei browser)
-  try {
-    let iframe = document.getElementById("pdf-print-frame");
-    if (!iframe) {
-      iframe = document.createElement("iframe");
-      iframe.id = "pdf-print-frame";
-      iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "none";
-      document.body.appendChild(iframe);
-    }
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
-    doc.open();
-    doc.write(html);
-    doc.close();
-    setTimeout(() => {
-      try {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-      } catch (e) {
-        // Approccio 2: fallback con Blob download
-        const blob = new Blob([html], { type: "text/html" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Preventivo_${(quote.cliente || "Cliente").replace(/\s+/g, "_")}_${quote.data?.replace(/\//g, "-") || "oggi"}.html`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    }, 300);
-  } catch (e) {
-    // Approccio 3: ultimo fallback con window.open
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-      setTimeout(() => w.print(), 500);
-    }
-  }
+  // Genera PDF reale con html2pdf.js
+  const container = document.createElement("div");
+  container.innerHTML = html;
+  container.style.position = "fixed";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  container.style.width = "800px";
+  document.body.appendChild(container);
+
+  const loadScript = (src) => new Promise((resolve, reject) => {
+    if (document.querySelector('script[src="' + src + '"]')) { resolve(); return; }
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+
+  const nomeFile = "Preventivo_" + (quote.cliente || "Cliente").replace(/\s+/g, "_") + "_" + (quote.data ? quote.data.replace(/\//g, "-") : "oggi") + ".pdf";
+
+  loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js").then(() => {
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: nomeFile,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+    };
+    html2pdf().set(opt).from(container).save().then(() => {
+      document.body.removeChild(container);
+    });
+  }).catch(() => {
+    document.body.removeChild(container);
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nomeFile.replace(".pdf", ".html");
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
 }
 
 // ========== MAIN APP ==========
