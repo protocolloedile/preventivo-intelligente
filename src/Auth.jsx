@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabaseClient";
-import { Mail, Eye, EyeOff, LogIn, UserPlus, ArrowLeft, Building2, User, Phone, MapPin, FileText } from "lucide-react";
+import { Mail, Eye, EyeOff, LogIn, UserPlus, ArrowLeft, Building2, User, Phone, MapPin, FileText, Lock } from "lucide-react";
 
 // InputField defined OUTSIDE Auth to prevent focus loss on re-renders
 const InputField = ({ icon: Icon, label, type = "text", value, onChange, placeholder, maxLength }) => (
@@ -37,7 +37,6 @@ export default function Auth() {
   const [regCF, setRegCF] = useState("");
   const [regTelefono, setRegTelefono] = useState("");
   const [regIndirizzo, setRegIndirizzo] = useState("");
-  const [regStep, setRegStep] = useState(1);
 
   const validateCF = (cf) => {
     if (!cf) return false;
@@ -74,17 +73,24 @@ export default function Auth() {
     e.preventDefault();
     setError("");
     setMessage("");
+    if (!regNome || !regCognome || !regAzienda || !regPiva || !regCF || !regTelefono || !regIndirizzo || !email || !password) {
+      setError("Compila tutti i campi obbligatori");
+      return;
+    }
+    if (!validateCF(regCF)) {
+      setError("Codice Fiscale non valido. Deve essere di 16 caratteri alfanumerici.");
+      return;
+    }
+    if (!validatePIVA(regPiva)) {
+      setError("Partita IVA non valida. Deve essere di 11 cifre.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("La password deve avere almeno 6 caratteri.");
+      return;
+    }
     setLoading(true);
     try {
-      if (!regNome || !regCognome || !regAzienda || !regPiva || !regCF || !regTelefono || !regIndirizzo) {
-        throw new Error("Compila tutti i campi obbligatori");
-      }
-      if (!validateCF(regCF)) {
-        throw new Error("Codice Fiscale non valido. Deve essere di 16 caratteri alfanumerici.");
-      }
-      if (!validatePIVA(regPiva)) {
-        throw new Error("Partita IVA non valida. Deve essere di 11 cifre.");
-      }
       const cfUnique = await checkUniqueness("codice_fiscale", regCF.toUpperCase());
       if (!cfUnique) {
         throw new Error("Esiste già un account con questo Codice Fiscale.");
@@ -152,7 +158,7 @@ export default function Auth() {
                 className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition ${mode === "login" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500"}`}
               >Accedi</button>
               <button
-                onClick={() => { setMode("register"); setError(""); setMessage(""); setRegStep(1); }}
+                onClick={() => { setMode("register"); setError(""); setMessage(""); }}
                 className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition ${mode === "register" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500"}`}
               >Registrati</button>
             </div>
@@ -187,60 +193,34 @@ export default function Auth() {
           )}
 
           {mode === "register" && (
-            <form onSubmit={handleSignup} className="space-y-4">
-              {regStep === 1 && (
-                <>
-                  <p className="text-sm text-gray-500 mb-2">Step 1/2 - Dati aziendali</p>
-                  <InputField icon={User} label="Nome *" value={regNome} onChange={(e) => setRegNome(e.target.value)} placeholder="Il tuo nome" />
-                  <InputField icon={User} label="Cognome *" value={regCognome} onChange={(e) => setRegCognome(e.target.value)} placeholder="Il tuo cognome" />
-                  <InputField icon={Building2} label="Nome Azienda *" value={regAzienda} onChange={(e) => setRegAzienda(e.target.value)} placeholder="Nome della tua impresa" />
-                  <InputField icon={FileText} label="Partita IVA * (11 cifre)" value={regPiva} onChange={(e) => setRegPiva(e.target.value.replace(/\D/g, "").slice(0, 11))} placeholder="12345678901" maxLength={11} />
-                  <InputField icon={FileText} label="Codice Fiscale * (16 caratteri)" value={regCF} onChange={(e) => setRegCF(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16))} placeholder="RSSMRA85M01H501Z" maxLength={16} />
-                  <InputField icon={Phone} label="Telefono *" value={regTelefono} onChange={(e) => setRegTelefono(e.target.value)} placeholder="+39 333 1234567" />
-                  <InputField icon={MapPin} label="Indirizzo *" value={regIndirizzo} onChange={(e) => setRegIndirizzo(e.target.value)} placeholder="Via Roma 1, Milano" />
-                  <button type="button" onClick={() => {
-                    setError("");
-                    if (!regNome || !regCognome || !regAzienda || !regPiva || !regCF || !regTelefono || !regIndirizzo) {
-                      setError("Compila tutti i campi obbligatori");
-                      return;
-                    }
-                    if (!validatePIVA(regPiva)) {
-                      setError("Partita IVA non valida (11 cifre)");
-                      return;
-                    }
-                    if (!validateCF(regCF)) {
-                      setError("Codice Fiscale non valido (16 caratteri alfanumerici)");
-                      return;
-                    }
-                    setRegStep(2);
-                  }} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-xl transition">Continua</button>
-                </>
-              )}
-              {regStep === 2 && (
-                <>
-                  <p className="text-sm text-gray-500 mb-2">Step 2/2 - Credenziali di accesso</p>
-                  <button type="button" onClick={() => setRegStep(1)} className="text-sm text-orange-500 flex items-center gap-1 mb-2"><ArrowLeft size={14} />Torna ai dati aziendali</button>
-                  <InputField icon={Mail} label="Email *" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="la-tua-email@esempio.it" />
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Minimo 6 caratteri"
-                        className="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-sm"
-                      />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-                  <button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50">
-                    <UserPlus size={18} />{loading ? "Registrazione..." : "Crea Account"}
+            <form onSubmit={handleSignup} className="space-y-3">
+              <InputField icon={User} label="Nome *" value={regNome} onChange={(e) => setRegNome(e.target.value)} placeholder="Il tuo nome" />
+              <InputField icon={User} label="Cognome *" value={regCognome} onChange={(e) => setRegCognome(e.target.value)} placeholder="Il tuo cognome" />
+              <InputField icon={Building2} label="Nome Azienda *" value={regAzienda} onChange={(e) => setRegAzienda(e.target.value)} placeholder="Nome della tua impresa" />
+              <InputField icon={FileText} label="Partita IVA * (11 cifre)" value={regPiva} onChange={(e) => setRegPiva(e.target.value.replace(/\D/g, "").slice(0, 11))} placeholder="12345678901" maxLength={11} />
+              <InputField icon={FileText} label="Codice Fiscale * (16 caratteri)" value={regCF} onChange={(e) => setRegCF(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16))} placeholder="RSSMRA85M01H501Z" maxLength={16} />
+              <InputField icon={Phone} label="Telefono *" value={regTelefono} onChange={(e) => setRegTelefono(e.target.value)} placeholder="+39 333 1234567" />
+              <InputField icon={MapPin} label="Indirizzo *" value={regIndirizzo} onChange={(e) => setRegIndirizzo(e.target.value)} placeholder="Via Roma 1, Milano" />
+              <div className="border-t border-gray-100 my-2"></div>
+              <InputField icon={Mail} label="Email *" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="la-tua-email@esempio.it" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password * (min. 6 caratteri)</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Minimo 6 caratteri"
+                    className="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-sm"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
-                </>
-              )}
+                </div>
+              </div>
+              <button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50">
+                <UserPlus size={18} />{loading ? "Registrazione..." : "Crea Account"}
+              </button>
             </form>
           )}
 
