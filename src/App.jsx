@@ -43,9 +43,9 @@ const DEFAULT_PRICES = [
   { id: 30, categoria: "Infissi", voce: "Finestra PVC doppio vetro", unita: "mq", prezzo: 280, note: "Classe A", iva: 22 },
   { id: 31, categoria: "Infissi", voce: "Portoncino blindato", unita: "cad", prezzo: 1200, note: "Classe 3", iva: 22 },
   // Varie
-  { id: 32, categoria: "Varie", voce: "Trasporto e smaltimento macerie", unita: "mc", prezzo: 85, note: "A discarica autorizzata", iva: 22 },
+  { id: 32, categoria: "Varie", voce: "Trasporto e smaltimento macerie", unita: "cad", prezzo: 250, note: "A corpo - prezzo modificabile", iva: 22 },
   { id: 33, categoria: "Varie", voce: "Ponteggio esterno", unita: "mq", prezzo: 18, note: "A mese, incluso montaggio", iva: 22 },
-  { id: 34, categoria: "Varie", voce: "Pulizia fine cantiere", unita: "mq", prezzo: 5, note: "Pulizia approfondita", iva: 22 },
+  { id: 34, categoria: "Varie", voce: "Pulizia fine cantiere", unita: "cad", prezzo: 300, note: "A corpo - prezzo modificabile", iva: 22 },
 ];
 
 // ========== AI SIMULATION ==========
@@ -80,7 +80,7 @@ function parseVoiceToQuote(transcript, priceDB) {
     "cartongesso": [{ voce: "Costruzione tramezza in cartongesso", qta: 12 }],
     "tramezzo": [{ voce: "Costruzione tramezza in laterizio", qta: 10 }],
     "tramezza": [{ voce: "Costruzione tramezza in laterizio", qta: 10 }],
-    "demoliz": [{ voce: "Demolizione pavimento", qta: 20 }, { voce: "Trasporto e smaltimento macerie", qta: 3 }],
+    "demoliz": [{ voce: "Demolizione pavimento", qta: 20 }, { voce: "Trasporto e smaltimento macerie", qta: 1 }],
     "infiss": [{ voce: "Finestra PVC doppio vetro", qta: 4 }],
     "finestra": [{ voce: "Finestra PVC doppio vetro", qta: 2 }],
     "finestre": [{ voce: "Finestra PVC doppio vetro", qta: 4 }],
@@ -92,20 +92,20 @@ function parseVoiceToQuote(transcript, priceDB) {
     "rasat": [{ voce: "Rasatura pareti", qta: 50 }],
     "controsoffitto": [{ voce: "Controsoffitto in cartongesso", qta: 15 }],
     "massetto": [{ voce: "Massetto tradizionale", qta: 30 }],
-    "pulizia": [{ voce: "Pulizia fine cantiere", qta: 40 }],
-    "smaltimento": [{ voce: "Trasporto e smaltimento macerie", qta: 3 }],
+    "pulizia": [{ voce: "Pulizia fine cantiere", qta: 1 }],
+    "smaltimento": [{ voce: "Trasporto e smaltimento macerie", qta: 1 }],
     "ponteggio": [{ voce: "Ponteggio esterno", qta: 50 }],
     "stucco veneziano": [{ voce: "Stucco veneziano", qta: 20 }],
     "ristruttur": [
       { voce: "Demolizione pavimento", qta: 50 },
-      { voce: "Trasporto e smaltimento macerie", qta: 5 },
+      { voce: "Trasporto e smaltimento macerie", qta: 1 },
       { voce: "Massetto tradizionale", qta: 50 },
       { voce: "Posa pavimento gres", qta: 50 },
       { voce: "Battiscopa in gres", qta: 30 },
       { voce: "Rasatura pareti", qta: 120 },
       { voce: "Tinteggiatura pareti", qta: 120 },
       { voce: "Tinteggiatura soffitto", qta: 50 },
-      { voce: "Pulizia fine cantiere", qta: 50 },
+      { voce: "Pulizia fine cantiere", qta: 1 },
     ],
   };
 
@@ -175,6 +175,9 @@ function Header({ currentView, onNavigate, userProfile, onLogout }) {
             <User size={20} />
           )}
         </button>
+        <button onClick={onLogout} className="p-2 hover:bg-white/20 rounded-lg transition" title="Esci">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
       </div>
     </div>
   );
@@ -189,7 +192,15 @@ function HomeView({ onNavigate, stats, userProfile }) {
         <p className="text-gray-500 mt-1">Cosa vuoi fare oggi?</p>
       </div>
 
-      <button onClick={() => onNavigate("nuovo")} className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white p-5 rounded-2xl flex items-center gap-4 shadow-lg hover:shadow-xl transition transform hover:scale-[1.02] active:scale-[0.98]">
+      <button onClick={() => {
+        const p = userProfile || {};
+        if (!p.nome || !p.cognome || !p.nomeAzienda || !p.partitaIva || !p.email || !p.telefono || !p.indirizzo) {
+          alert("Completa il tuo profilo prima di creare un preventivo. Vai su Profilo Azienda e compila tutti i campi obbligatori (Nome, Cognome, Nome Azienda, P.IVA, Email, Telefono, Indirizzo).");
+          onNavigate("profilo");
+          return;
+        }
+        onNavigate("nuovo");
+      }} className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white p-5 rounded-2xl flex items-center gap-4 shadow-lg hover:shadow-xl transition transform hover:scale-[1.02] active:scale-[0.98]">
         <div className="bg-white/20 p-3 rounded-xl">
           <Mic size={28} />
         </div>
@@ -1803,7 +1814,7 @@ function StoricoView({ quotes, onViewQuote }) {
   );
 }
 
-function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadPDF, initialData }) {
+function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadPDF, initialData, userProfile }) {
   const isEditing = !!initialData;
 
   // Scadenza: default 30 giorni da oggi
@@ -1833,8 +1844,8 @@ function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadP
   ]);
   const [photos, setPhotos] = useState(isEditing ? (initialData.photos || []) : []);
   const [descrizione, setDescrizione] = useState(isEditing ? (initialData.descrizione || "") : "");
-  const [firmaImpresa, setFirmaImpresa] = useState(isEditing ? (initialData.firmaImpresa || "") : "");
-  const [luogoFirma, setLuogoFirma] = useState(isEditing ? (initialData.luogoFirma || "") : "");
+  const [firmaImpresa, setFirmaImpresa] = useState(isEditing ? (initialData.firmaImpresa || "") : (userProfile?.nomeAzienda || ""));
+  const [luogoFirma, setLuogoFirma] = useState(isEditing ? (initialData.luogoFirma || "") : (userProfile?.indirizzo ? userProfile.indirizzo.split(",").pop().trim() : ""));
 
   const handleTranscript = (text) => {
     setTranscript(text);
@@ -2056,7 +2067,7 @@ function generatePDF(quote, userProfile) {
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Preventivo - ${quote.cliente || "Cliente"}</title>
 <style>
-  @media print { body { margin: 0; } @page { margin: 15mm; } }
+  @media print { body { margin: 0; } @page { margin: 15mm; size: A4; } }
   body { font-family: 'Segoe UI', Arial, sans-serif; color: #1F2937; max-width: 800px; margin: 0 auto; padding: 20px; }
 </style></head><body>
   <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:20px;border-bottom:3px solid #EA580C;margin-bottom:24px;">
@@ -2308,7 +2319,7 @@ export default function App({ session }) {
 
         {currentView === "home" && <HomeView onNavigate={setCurrentView} stats={stats} userProfile={userProfile} />}
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
-        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} />}
+        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} userProfile={userProfile} />}
         {currentView === "modifica" && editingQuote && (
           <NuovoPreventivo
             prices={prices}
@@ -2317,6 +2328,7 @@ export default function App({ session }) {
             onNavigate={setCurrentView}
             onDownloadPDF={(q) => generatePDF(q, userProfile)}
             initialData={editingQuote}
+            userProfile={userProfile}
           />
         )}
         {currentView === "database" && <PriceDatabase prices={prices} setPrices={setPrices} />}
