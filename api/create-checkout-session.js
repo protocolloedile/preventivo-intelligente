@@ -1,8 +1,8 @@
-const Stripe = require("stripe");
+import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
             currency: "eur",
             product_data: {
               name: "Preventivo Intelligente - Piano Pro",
-              description: "Accesso completo a tutte le funzionalit\u00E0",
+              description: "Accesso completo a tutte le funzionalità",
             },
             unit_amount: 4700,
             recurring: { interval: "month" },
@@ -38,4 +38,4 @@ module.exports = async function handler(req, res) {
     console.error("Stripe error:", error);
     res.status(500).json({ error: error.message });
   }
-};
+}
