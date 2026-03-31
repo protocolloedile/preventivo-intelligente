@@ -2569,12 +2569,20 @@ export default function App({ session }) {
 
         const { data: quotesData } = await supabase.from("quotes").select("*").eq("user_id", userId).order("created_at", { ascending: false });
         if (quotesData) {
-          setQuotes(quotesData.map(q => ({
-            _supabaseId: q.id, numero: q.numero_preventivo, descrizione: q.descrizione,
-            items: q.items || [], pagamento: q.pagamento || [], scadenza: q.scadenza,
-            note: q.note || "", totale: q.totale, stato: q.stato,
-            clientInfo: q.items?.[0]?.clientInfo || {}, created_at: q.created_at,
-          })));
+          setQuotes(quotesData.map(q => {
+            const meta = (q.items || []).find(i => i._meta);
+            const realItems = (q.items || []).filter(i => !i._meta);
+            return {
+              _supabaseId: q.id, numero: q.numero_preventivo, descrizione: q.descrizione,
+              items: realItems, pagamento: q.pagamento || [], scadenza: q.scadenza,
+              note: q.note || "", totale: q.totale, stato: q.stato,
+              cliente: meta?.cliente || "", clientInfo: meta?.clientInfo || {},
+              discount: meta?.discount, margin: meta?.margin,
+              firmaImpresa: meta?.firmaImpresa || "", luogoFirma: meta?.luogoFirma || "",
+              costoTotaleInterno: meta?.costoTotaleInterno || 0,
+              costoTotaleInterno: meta?.costoTotaleInterno || 0, voci: realItems.length,
+              created_at: q.created_at, data: new Date(q.created_at).toLocaleDateString("it-IT"),
+          }));
         }
         setDataLoaded(true);
       } catch (err) {
@@ -2611,18 +2619,18 @@ export default function App({ session }) {
       setQuotes(updated);
       setEditingQuote(null);
       if (quote._supabaseId) {
-        await supabase.from("quotes").update({
-          descrizione: quote.descrizione, items: quote.items, pagamento: quote.pagamento,
-          scadenza: quote.scadenza, note: quote.note, totale: quote.totale,
-          updated_at: new Date().toISOString(),
-        }).eq("id", quote._supabaseId);
+          await supabase.from("quotes").update({
+            descrizione: quote.descrizione, items: [...quote.items.filter(i => !i._meta), { _meta: true, cliente: quote.clientInfo?.nome || quote.cliente, clientInfo: quote.clientInfo, discount: quote.discount, margin: quote.margin, firmaImpresa: quote.firmaImpresa, luogoFirma: quote.luogoFirma, costoTotaleInterno: quote.costoTotaleInterno }], pagamento: quote.pagamento,
+            scadenza: quote.scadenza, note: quote.note, totale: quote.totale,
+            updated_at: new Date().toISOString(),
+          }).eq("id", quote._supabaseId);
       }
     } else {
-      const { data } = await supabase.from("quotes").insert({
-        user_id: session.user.id, numero_preventivo: quote.numero || `P-${Date.now()}`,
-        descrizione: quote.descrizione, items: quote.items, pagamento: quote.pagamento,
-        scadenza: quote.scadenza, note: quote.note, totale: quote.totale, stato: "bozza",
-      }).select().single();
+          const { data } = await supabase.from("quotes").insert({
+            user_id: session.user.id, numero_preventivo: quote.numero || `P-${Date.now()}`,
+            descrizione: quote.descrizione, items: [...quote.items, { _meta: true, cliente: quote.clientInfo?.nome || quote.cliente, clientInfo: quote.clientInfo, discount: quote.discount, margin: quote.margin, firmaImpresa: quote.firmaImpresa, luogoFirma: quote.luogoFirma, costoTotaleInterno: quote.costoTotaleInterno }], pagamento: quote.pagamento,
+            scadenza: quote.scadenza, note: quote.note, totale: quote.totale, stato: "bozza",
+          }).select().single();
       const newQuote = data ? { ...quote, _supabaseId: data.id } : quote;
       setQuotes([newQuote, ...quotes]);
       // Auto-insert client if not in database
