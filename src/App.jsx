@@ -2084,6 +2084,25 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
   );
 }
 function StoricoView({ quotes, onViewQuote, onDeleteQuote }) {
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState([]);
+
+  const toggleSelect = (i) => {
+    setSelected(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]);
+  };
+  const toggleAll = () => {
+    setSelected(selected.length === quotes.length ? [] : quotes.map((_, i) => i));
+  };
+  const deleteSelected = () => {
+    if (selected.length === 0) return;
+    if (!window.confirm("Eliminare " + selected.length + " preventiv" + (selected.length === 1 ? "o" : "i") + " selezionat" + (selected.length === 1 ? "o" : "i") + "?")) return;
+    const sorted = [...selected].sort((a, b) => b - a);
+    sorted.forEach(i => onDeleteQuote(quotes[i], i));
+    setSelected([]);
+    setSelectMode(false);
+  };
+  const exitSelectMode = () => { setSelectMode(false); setSelected([]); };
+
   if (quotes.length === 0) {
     return (
       <div className="p-4 text-center py-12">
@@ -2095,33 +2114,53 @@ function StoricoView({ quotes, onViewQuote, onDeleteQuote }) {
   }
   return (
     <div className="p-4 space-y-3">
-      <h2 className="font-bold text-gray-800 text-lg">Storico Preventivi</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-gray-800 text-lg">Storico Preventivi</h2>
+        <button onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)} className={"text-xs font-medium px-3 py-1 rounded-lg transition " + (selectMode ? "bg-gray-200 text-gray-700" : "bg-orange-100 text-orange-600")}>
+          {selectMode ? "Annulla" : "Seleziona"}
+        </button>
+      </div>
+      {selectMode && (
+        <div className="flex items-center justify-between bg-orange-50 border border-orange-200 rounded-xl px-4 py-2">
+          <button onClick={toggleAll} className="text-xs font-medium text-orange-700">
+            {selected.length === quotes.length ? "Deseleziona tutto" : "Seleziona tutto"}
+          </button>
+          <button onClick={deleteSelected} disabled={selected.length === 0} className={"text-xs font-medium px-3 py-1 rounded-lg transition " + (selected.length > 0 ? "bg-red-500 text-white" : "bg-gray-200 text-gray-400")}>
+            Elimina ({selected.length})
+          </button>
+        </div>
+      )}
       {quotes.map((q, i) => (
-        <button
-          key={i}
-          onClick={() => onViewQuote(q, i)}
-          className="w-full text-left bg-white border border-gray-200 rounded-xl p-4 hover:border-orange-300 hover:shadow-md transition"
-        >
+        <div key={i} onClick={() => selectMode ? toggleSelect(i) : onViewQuote(q, i)} className={"w-full text-left bg-white border rounded-xl p-4 hover:shadow-md transition cursor-pointer " + (selectMode && selected.includes(i) ? "border-orange-500 bg-orange-50" : "border-gray-200 hover:border-orange-300")}>
           <div className="flex justify-between items-start">
-            <div>
-              <p className="font-medium text-gray-800">{q.cliente || "Cliente senza nome"}</p>
-              <p className="text-gray-400 text-xs mt-1">{q.data}</p>
+            <div className="flex items-center gap-3">
+              {selectMode && (
+                <div className={"w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 " + (selected.includes(i) ? "bg-orange-500 border-orange-500" : "border-gray-300")}>
+                  {selected.includes(i) && <Check size={12} className="text-white" />}
+                </div>
+              )}
+              <div>
+                <p className="font-medium text-gray-800">{q.cliente || "Cliente senza nome"}</p>
+                <p className="text-gray-400 text-xs mt-1">{q.data}</p>
+              </div>
             </div>
             <span className="font-bold text-orange-600">€ {q.totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
           </div>
           <div className="flex items-center justify-between mt-2">
             <p className="text-gray-500 text-xs">{q.voci} voci · {q.descrizione?.substring(0, 50)}...</p>
-            <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 text-orange-500 text-xs font-medium">
-                    <Eye size={12} />
-                    <span>Apri</span>
-                  </div>
-                  <button onClick={(e) => { e.stopPropagation(); if (window.confirm("Eliminare questo preventivo?")) onDeleteQuote(q, i); }} className="text-red-400 hover:text-red-600 transition p-1">
-                    <Trash2 size={14} />
-                  </button>
+            {!selectMode && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 text-orange-500 text-xs font-medium">
+                  <Eye size={12} />
+                  <span>Apri</span>
                 </div>
+                <button onClick={(e) => { e.stopPropagation(); if (window.confirm("Eliminare questo preventivo?")) onDeleteQuote(q, i); }} className="text-red-400 hover:text-red-600 transition p-1">
+                  <Trash2 size={14} />
+                </button>
               </div>
-            </button>
+            )}
+          </div>
+        </div>
       ))}
     </div>
   );
