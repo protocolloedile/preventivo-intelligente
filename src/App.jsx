@@ -1648,9 +1648,10 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
   const [loading, setLoading] = useState(false);
 
   const handlePromo = () => {
-    if (promoCode.trim().toUpperCase() === "PROVA14") {
+    const code = promoCode.trim().toUpperCase();
+      if (code === "PROVA14" || code === "PROVA30") {
       setLoading(true);
-      onSubscribe("PROVA14");
+      onSubscribe(code);
     } else {
       setPromoError("Codice non valido");
     }
@@ -2760,9 +2761,9 @@ export default function App({ session }) {
   const isSubscribed = subscriptionStatus === "active" || subscriptionStatus === "trialing";
 
   const handleSubscribe = async (promoCode) => {
-    if (promoCode === "PROVA14") {
+    if (promoCode === "PROVA14" || promoCode === "PROVA30") {
       const trialEnd = new Date();
-      trialEnd.setDate(trialEnd.getDate() + 14);
+      trialEnd.setDate(trialEnd.getDate() + (promoCode === "PROVA30" ? 30 : 14));
       const { error } = await supabase.from("profiles").update({ subscription_status: "trialing", trial_end: trialEnd.toISOString() }).eq("id", session.user.id);
       if (!error) { setSubscriptionStatus("trialing"); }
       return;
