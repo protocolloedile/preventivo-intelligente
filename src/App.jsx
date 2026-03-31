@@ -2606,6 +2606,13 @@ export default function App({ session }) {
   const syncClientsToSupabase = async (newClients) => {
     setClients(newClients);
     if (!session?.user?.id || !dataLoaded) return;
+    await supabase.from("clients").delete().eq("user_id", session.user.id);
+    if (newClients.length > 0) {
+      await supabase.from("clients").insert(newClients.map(c => ({
+        user_id: session.user.id,
+        nome: c.nome || "", indirizzo: c.indirizzo || "", telefono: c.telefono || c.whatsapp || "", email: c.email || "", note: c.note || "",
+      })));
+    }
   };
 
   const handleLogout = async () => {
@@ -2638,8 +2645,9 @@ export default function App({ session }) {
       if (clienteNome) {
         const exists = clients.some(c => c.nome.toLowerCase() === clienteNome.toLowerCase());
         if (!exists) {
-          const newClient = { id: Date.now(), tipo: "Privato", nome: clienteNome, codiceFiscale: "", email: quote.clientInfo?.email || "", whatsapp: quote.clientInfo?.telefono || "", indirizzo: quote.clientInfo?.indirizzo || "", note: "Auto-inserito da preventivo" };
-          setClients(prev => [newClient, ...prev]);
+            const newClient = { id: Date.now(), tipo: "Privato", nome: clienteNome, codiceFiscale: "", email: quote.clientInfo?.email || "", whatsapp: quote.clientInfo?.telefono || "", indirizzo: quote.clientInfo?.indirizzo || "", note: "Auto-inserito da preventivo" };
+            setClients(prev => [newClient, ...prev]);
+            await supabase.from("clients").insert({ user_id: session.user.id, nome: clienteNome, email: quote.clientInfo?.email || "", telefono: quote.clientInfo?.telefono || "", indirizzo: quote.clientInfo?.indirizzo || "", note: "Auto-inserito da preventivo" });
         }
       }
     }
@@ -2711,7 +2719,7 @@ export default function App({ session }) {
           />
         )}
         {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={setPrices} /></div>}
-          {currentView === "clienti" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><ClientDatabase clients={clients} setClients={setClients} /></div>}
+          {currentView === "clienti" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><ClientDatabase clients={clients} setClients={syncClientsToSupabase} /></div>}
           {currentView === "costifissi" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><CostiFissiView costiFissi={costiFissi} setCostiFissi={setCostiFissi} /></div>}
         {currentView === "storico" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><StoricoView quotes={quotes} onViewQuote={handleViewQuote} /></div>}
         {currentView === "dettaglio" && selectedQuote && (
