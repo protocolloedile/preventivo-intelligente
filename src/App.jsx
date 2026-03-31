@@ -1441,6 +1441,7 @@ function PriceDatabase({ prices, setPrices }) {
           <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-3">
             {editingId === item.id ? (
               <div className="space-y-2">
+                  <p className="font-medium text-sm text-gray-800">{item.voce}</p>
                 <div className="flex gap-2 items-center">
                   <span className="text-xs text-gray-400">Costo €</span>
                   <input type="number" value={editValues.costoInterno} onChange={(e) => setEditValues({...editValues, costoInterno: parseFloat(e.target.value)})} className="w-20 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
@@ -1451,7 +1452,6 @@ function PriceDatabase({ prices, setPrices }) {
                     <button onClick={() => saveEdit(item.id)} className="p-1 bg-green-500 text-white rounded"><Check size={14} /></button>
                     <button onClick={() => setEditingId(null)} className="p-1 bg-gray-300 text-white rounded"><X size={14} /></button>
                   </div>
-                </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-400">IVA:</span>
