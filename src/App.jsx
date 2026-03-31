@@ -5,47 +5,74 @@ import { supabase } from "./supabaseClient";
 // ========== DATABASE PREZZI DEFAULT ==========
 const DEFAULT_PRICES = [
   // Demolizioni
-  { id: 1, categoria: "Demolizioni", voce: "Demolizione pavimento", unita: "mq", prezzo: 18, note: "Incluso smaltimento", iva: 22 },
-  { id: 2, categoria: "Demolizioni", voce: "Demolizione rivestimento bagno", unita: "mq", prezzo: 15, note: "Pareti e pavimento", iva: 22 },
-  { id: 3, categoria: "Demolizioni", voce: "Demolizione tramezza", unita: "mq", prezzo: 22, note: "Spessore fino a 12cm", iva: 22 },
-  { id: 4, categoria: "Demolizioni", voce: "Rimozione vasca da bagno", unita: "cad", prezzo: 150, note: "Incluso trasporto", iva: 22 },
-  { id: 5, categoria: "Demolizioni", voce: "Rimozione sanitari", unita: "cad", prezzo: 45, note: "Per singolo pezzo", iva: 22 },
+  { id: 1, categoria: "Demolizioni", voce: "Demolizione pavimento", unita: "mq", costoInterno: 11, prezzo: 18, note: "Incluso smaltimento", iva: 22 },
+  { id: 2, categoria: "Demolizioni", voce: "Demolizione rivestimento bagno", unita: "mq", costoInterno: 9, prezzo: 15, note: "Pareti e pavimento", iva: 22 },
+  { id: 3, categoria: "Demolizioni", voce: "Demolizione tramezza", unita: "mq", costoInterno: 13, prezzo: 22, note: "Spessore fino a 12cm", iva: 22 },
+  { id: 4, categoria: "Demolizioni", voce: "Rimozione vasca da bagno", unita: "cad", costoInterno: 90, prezzo: 150, note: "Incluso trasporto", iva: 22 },
+  { id: 5, categoria: "Demolizioni", voce: "Rimozione sanitari", unita: "cad", costoInterno: 27, prezzo: 45, note: "Per singolo pezzo", iva: 22 },
   // Muratura
-  { id: 6, categoria: "Muratura", voce: "Costruzione tramezza in cartongesso", unita: "mq", prezzo: 45, note: "Singola lastra", iva: 22 },
-  { id: 7, categoria: "Muratura", voce: "Costruzione tramezza in laterizio", unita: "mq", prezzo: 55, note: "Forato 8cm", iva: 22 },
-  { id: 8, categoria: "Muratura", voce: "Intonaco civile", unita: "mq", prezzo: 18, note: "Spessore medio 1.5cm", iva: 22 },
-  { id: 9, categoria: "Muratura", voce: "Rasatura pareti", unita: "mq", prezzo: 12, note: "Preparazione per pittura", iva: 22 },
-  { id: 10, categoria: "Muratura", voce: "Controsoffitto in cartongesso", unita: "mq", prezzo: 38, note: "Struttura e lastra", iva: 22 },
+  { id: 6, categoria: "Muratura", voce: "Costruzione tramezza in cartongesso", unita: "mq", costoInterno: 27, prezzo: 45, note: "Singola lastra", iva: 22 },
+  { id: 7, categoria: "Muratura", voce: "Costruzione tramezza in laterizio", unita: "mq", costoInterno: 33, prezzo: 55, note: "Forato 8cm", iva: 22 },
+  { id: 8, categoria: "Muratura", voce: "Intonaco civile", unita: "mq", costoInterno: 11, prezzo: 18, note: "Spessore medio 1.5cm", iva: 22 },
+  { id: 9, categoria: "Muratura", voce: "Rasatura pareti", unita: "mq", costoInterno: 7, prezzo: 12, note: "Preparazione per pittura", iva: 22 },
+  { id: 10, categoria: "Muratura", voce: "Controsoffitto in cartongesso", unita: "mq", costoInterno: 23, prezzo: 38, note: "Struttura e lastra", iva: 22 },
   // Pavimenti e Rivestimenti
-  { id: 11, categoria: "Pavimenti", voce: "Posa pavimento gres", unita: "mq", prezzo: 32, note: "Formato fino a 60x60", iva: 22 },
-  { id: 12, categoria: "Pavimenti", voce: "Posa pavimento gres grande formato", unita: "mq", prezzo: 42, note: "Formato oltre 60x60", iva: 22 },
-  { id: 13, categoria: "Pavimenti", voce: "Posa rivestimento bagno", unita: "mq", prezzo: 35, note: "Pareti", iva: 22 },
-  { id: 14, categoria: "Pavimenti", voce: "Massetto tradizionale", unita: "mq", prezzo: 22, note: "Spessore 5cm", iva: 22 },
-  { id: 15, categoria: "Pavimenti", voce: "Battiscopa in gres", unita: "ml", prezzo: 8, note: "Posa e fornitura", iva: 22 },
+  { id: 11, categoria: "Pavimenti", voce: "Posa pavimento gres", unita: "mq", costoInterno: 19, prezzo: 32, note: "Formato fino a 60x60", iva: 22 },
+  { id: 12, categoria: "Pavimenti", voce: "Posa pavimento gres grande formato", unita: "mq", costoInterno: 25, prezzo: 42, note: "Formato oltre 60x60", iva: 22 },
+  { id: 13, categoria: "Pavimenti", voce: "Posa rivestimento bagno", unita: "mq", costoInterno: 21, prezzo: 35, note: "Pareti", iva: 22 },
+  { id: 14, categoria: "Pavimenti", voce: "Massetto tradizionale", unita: "mq", costoInterno: 13, prezzo: 22, note: "Spessore 5cm", iva: 22 },
+  { id: 15, categoria: "Pavimenti", voce: "Battiscopa in gres", unita: "ml", costoInterno: 5, prezzo: 8, note: "Posa e fornitura", iva: 22 },
   // Impianto Idraulico
-  { id: 16, categoria: "Idraulica", voce: "Punto acqua", unita: "cad", prezzo: 120, note: "Caldo e freddo", iva: 22 },
-  { id: 17, categoria: "Idraulica", voce: "Punto scarico", unita: "cad", prezzo: 95, note: "Incluso collegamento", iva: 22 },
-  { id: 18, categoria: "Idraulica", voce: "Installazione piatto doccia", unita: "cad", prezzo: 280, note: "Escluso piatto", iva: 22 },
-  { id: 19, categoria: "Idraulica", voce: "Installazione WC", unita: "cad", prezzo: 180, note: "Escluso sanitario", iva: 22 },
-  { id: 20, categoria: "Idraulica", voce: "Installazione lavabo", unita: "cad", prezzo: 150, note: "Escluso lavabo", iva: 22 },
-  { id: 21, categoria: "Idraulica", voce: "Installazione caldaia", unita: "cad", prezzo: 450, note: "A condensazione", iva: 22 },
+  { id: 16, categoria: "Idraulica", voce: "Punto acqua", unita: "cad", costoInterno: 72, prezzo: 120, note: "Caldo e freddo", iva: 22 },
+  { id: 17, categoria: "Idraulica", voce: "Punto scarico", unita: "cad", costoInterno: 57, prezzo: 95, note: "Incluso collegamento", iva: 22 },
+  { id: 18, categoria: "Idraulica", voce: "Installazione piatto doccia", unita: "cad", costoInterno: 168, prezzo: 280, note: "Escluso piatto", iva: 22 },
+  { id: 19, categoria: "Idraulica", voce: "Installazione WC", unita: "cad", costoInterno: 108, prezzo: 180, note: "Escluso sanitario", iva: 22 },
+  { id: 20, categoria: "Idraulica", voce: "Installazione lavabo", unita: "cad", costoInterno: 90, prezzo: 150, note: "Escluso lavabo", iva: 22 },
+  { id: 21, categoria: "Idraulica", voce: "Installazione caldaia", unita: "cad", costoInterno: 270, prezzo: 450, note: "A condensazione", iva: 22 },
   // Impianto Elettrico
-  { id: 22, categoria: "Elettricità", voce: "Punto luce", unita: "cad", prezzo: 65, note: "Incluso cablaggio", iva: 22 },
-  { id: 23, categoria: "Elettricità", voce: "Punto presa", unita: "cad", prezzo: 55, note: "Schuko o bipasso", iva: 22 },
-  { id: 24, categoria: "Elettricità", voce: "Quadro elettrico", unita: "cad", prezzo: 380, note: "Fino a 12 moduli", iva: 22 },
-  { id: 25, categoria: "Elettricità", voce: "Impianto elettrico completo", unita: "mq", prezzo: 45, note: "A norma CEI", iva: 22 },
+  { id: 22, categoria: "Elettricità", voce: "Punto luce", unita: "cad", costoInterno: 39, prezzo: 65, note: "Incluso cablaggio", iva: 22 },
+  { id: 23, categoria: "Elettricità", voce: "Punto presa", unita: "cad", costoInterno: 33, prezzo: 55, note: "Schuko o bipasso", iva: 22 },
+  { id: 24, categoria: "Elettricità", voce: "Quadro elettrico", unita: "cad", costoInterno: 228, prezzo: 380, note: "Fino a 12 moduli", iva: 22 },
+  { id: 25, categoria: "Elettricità", voce: "Impianto elettrico completo", unita: "mq", costoInterno: 27, prezzo: 45, note: "A norma CEI", iva: 22 },
   // Pittura
-  { id: 26, categoria: "Pittura", voce: "Tinteggiatura pareti", unita: "mq", prezzo: 8, note: "Due mani", iva: 22 },
-  { id: 27, categoria: "Pittura", voce: "Tinteggiatura soffitto", unita: "mq", prezzo: 10, note: "Due mani", iva: 22 },
-  { id: 28, categoria: "Pittura", voce: "Stucco veneziano", unita: "mq", prezzo: 45, note: "Finitura decorativa", iva: 22 },
+  { id: 26, categoria: "Pittura", voce: "Tinteggiatura pareti", unita: "mq", costoInterno: 5, prezzo: 8, note: "Due mani", iva: 22 },
+  { id: 27, categoria: "Pittura", voce: "Tinteggiatura soffitto", unita: "mq", costoInterno: 6, prezzo: 10, note: "Due mani", iva: 22 },
+  { id: 28, categoria: "Pittura", voce: "Stucco veneziano", unita: "mq", costoInterno: 27, prezzo: 45, note: "Finitura decorativa", iva: 22 },
   // Infissi
-  { id: 29, categoria: "Infissi", voce: "Porta interna tamburata", unita: "cad", prezzo: 350, note: "Incluso controtelaio", iva: 22 },
-  { id: 30, categoria: "Infissi", voce: "Finestra PVC doppio vetro", unita: "mq", prezzo: 280, note: "Classe A", iva: 22 },
-  { id: 31, categoria: "Infissi", voce: "Portoncino blindato", unita: "cad", prezzo: 1200, note: "Classe 3", iva: 22 },
+  { id: 29, categoria: "Infissi", voce: "Porta interna tamburata", unita: "cad", costoInterno: 210, prezzo: 350, note: "Incluso controtelaio", iva: 22 },
+  { id: 30, categoria: "Infissi", voce: "Finestra PVC doppio vetro", unita: "mq", costoInterno: 168, prezzo: 280, note: "Classe A", iva: 22 },
+  { id: 31, categoria: "Infissi", voce: "Portoncino blindato", unita: "cad", costoInterno: 720, prezzo: 1200, note: "Classe 3", iva: 22 },
   // Varie
-  { id: 32, categoria: "Varie", voce: "Trasporto e smaltimento macerie", unita: "cad", prezzo: 250, note: "A corpo - prezzo modificabile", iva: 22 },
-  { id: 33, categoria: "Varie", voce: "Ponteggio esterno", unita: "mq", prezzo: 18, note: "A mese, incluso montaggio", iva: 22 },
-  { id: 34, categoria: "Varie", voce: "Pulizia fine cantiere", unita: "cad", prezzo: 300, note: "A corpo - prezzo modificabile", iva: 22 },
+  { id: 32, categoria: "Varie", voce: "Trasporto e smaltimento macerie", unita: "cad", costoInterno: 150, prezzo: 250, note: "A corpo - prezzo modificabile", iva: 22 },
+  { id: 33, categoria: "Varie", voce: "Ponteggio esterno", unita: "mq", costoInterno: 11, prezzo: 18, note: "A mese, incluso montaggio", iva: 22 },
+  { id: 34, categoria: "Varie", voce: "Pulizia fine cantiere", unita: "cad", costoInterno: 180, prezzo: 300, note: "A corpo - prezzo modificabile", iva: 22 },
+];
+
+// ========== COSTI FISSI DEFAULT ==========
+const DEFAULT_COSTI_FISSI = [
+  // Sede
+  { id: 1, categoria: "Sede", voce: "Affitto ufficio/magazzino", importo: 1200, frequenza: "mensile", note: "" },
+  { id: 2, categoria: "Sede", voce: "Utenze (luce, gas, acqua)", importo: 350, frequenza: "mensile", note: "" },
+  { id: 3, categoria: "Sede", voce: "Internet e telefono", importo: 80, frequenza: "mensile", note: "" },
+  // Consulenti
+  { id: 4, categoria: "Consulenti", voce: "Commercialista", importo: 3600, frequenza: "annuale", note: "" },
+  { id: 5, categoria: "Consulenti", voce: "Consulente del lavoro", importo: 1800, frequenza: "annuale", note: "" },
+  { id: 6, categoria: "Consulenti", voce: "Avvocato", importo: 1200, frequenza: "annuale", note: "" },
+  // Mezzi e attrezzature
+  { id: 7, categoria: "Mezzi", voce: "Leasing furgone", importo: 450, frequenza: "mensile", note: "" },
+  { id: 8, categoria: "Mezzi", voce: "Assicurazione mezzi", importo: 2400, frequenza: "annuale", note: "" },
+  { id: 9, categoria: "Mezzi", voce: "Carburante", importo: 600, frequenza: "mensile", note: "" },
+  { id: 10, categoria: "Mezzi", voce: "Manutenzione mezzi", importo: 1200, frequenza: "annuale", note: "" },
+  // Marketing
+  { id: 11, categoria: "Marketing", voce: "Pubblicita online (ADS)", importo: 500, frequenza: "mensile", note: "" },
+  { id: 12, categoria: "Marketing", voce: "Sito web e hosting", importo: 600, frequenza: "annuale", note: "" },
+  // Assicurazioni
+  { id: 13, categoria: "Assicurazioni", voce: "RC professionale", importo: 1800, frequenza: "annuale", note: "" },
+  { id: 14, categoria: "Assicurazioni", voce: "Assicurazione cantiere", importo: 2400, frequenza: "annuale", note: "" },
+  // Personale
+  { id: 15, categoria: "Personale", voce: "Stipendio operaio 1", importo: 1800, frequenza: "mensile", note: "" },
+  { id: 16, categoria: "Personale", voce: "Stipendio operaio 2", importo: 1800, frequenza: "mensile", note: "" },
+  { id: 17, categoria: "Personale", voce: "Contributi e TFR", importo: 1200, frequenza: "mensile", note: "" },
 ];
 
 // ========== AI SIMULATION ==========
@@ -212,7 +239,7 @@ function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus
         <ChevronRight size={20} className="ml-auto" />
       </button>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <button onClick={() => onNavigate("database")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 transition">
           <Database size={22} className="text-orange-500 mb-2" />
           <p className="font-semibold text-gray-800 text-xs">Prezzi</p>
@@ -227,6 +254,11 @@ function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus
           <FileText size={22} className="text-orange-500 mb-2" />
           <p className="font-semibold text-gray-800 text-xs">Storico</p>
           <p className="text-gray-400 text-xs mt-0.5">{stats.totalQuotes} prev.</p>
+        </button>
+        <button onClick={() => onNavigate("costifissi")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 transition">
+          <Building2 size={22} className="text-orange-500 mb-2" />
+          <p className="font-semibold text-gray-800 text-xs">Costi Fissi</p>
+          <p className="text-gray-400 text-xs mt-0.5">€ {stats.costoMensile?.toLocaleString("it-IT") || "0"}/mese</p>
         </button>
       </div>
 
@@ -929,7 +961,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                   <button
                     key={p.id}
                     onClick={() => {
-                      setItems([...items, { voce: p.voce, categoria: p.categoria, unita: p.unita, quantita: 1, prezzo: p.prezzo, iva: p.iva || 22 }]);
+                      setItems([...items, { voce: p.voce, categoria: p.categoria, unita: p.unita, quantita: 1, prezzo: p.prezzo, costoInterno: p.costoInterno || 0, iva: p.iva || 22 }]);
                       setShowDBPicker(false);
                       setDbSearch("");
                     }}
@@ -1290,7 +1322,7 @@ function PriceDatabase({ prices, setPrices }) {
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
   const [showAdd, setShowAdd] = useState(false);
-  const [newItem, setNewItem] = useState({ categoria: "", voce: "", unita: "mq", prezzo: 0, note: "", iva: 22 });
+  const [newItem, setNewItem] = useState({ categoria: "", voce: "", unita: "mq", costoInterno: 0, prezzo: 0, note: "", iva: 22 });
   const ivaOptions = [4, 10, 22];
 
   const categories = [...new Set(prices.map(p => p.categoria))];
@@ -1304,7 +1336,7 @@ function PriceDatabase({ prices, setPrices }) {
 
   const startEdit = (item) => {
     setEditingId(item.id);
-    setEditValues({ prezzo: item.prezzo, note: item.note, iva: item.iva || 22 });
+    setEditValues({ costoInterno: item.costoInterno, prezzo: item.prezzo, note: item.note, iva: item.iva || 22 });
   };
 
   const saveEdit = (id) => {
@@ -1314,8 +1346,8 @@ function PriceDatabase({ prices, setPrices }) {
 
   const addItem = () => {
     if (newItem.voce && newItem.categoria) {
-      setPrices([...prices, { ...newItem, id: Date.now(), prezzo: parseFloat(newItem.prezzo) }]);
-      setNewItem({ categoria: "", voce: "", unita: "mq", prezzo: 0, note: "", iva: 22 });
+      setPrices([...prices, { ...newItem, id: Date.now(), costoInterno: parseFloat(newItem.costoInterno), prezzo: parseFloat(newItem.prezzo) }]);
+      setNewItem({ categoria: "", voce: "", unita: "mq", costoInterno: 0, prezzo: 0, note: "", iva: 22 });
       setShowAdd(false);
     }
   };
@@ -1366,6 +1398,7 @@ function PriceDatabase({ prices, setPrices }) {
               <option value="kg">kg</option>
               <option value="ora">ora</option>
             </select>
+            <input type="number" value={newItem.costoInterno} onChange={(e) => setNewItem({...newItem, costoInterno: e.target.value})} placeholder="Costo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
             <input type="number" value={newItem.prezzo} onChange={(e) => setNewItem({...newItem, prezzo: e.target.value})} placeholder="Prezzo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
           </div>
           <input value={newItem.note} onChange={(e) => setNewItem({...newItem, note: e.target.value})} placeholder="Note (opzionale)" className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
@@ -1408,15 +1441,17 @@ function PriceDatabase({ prices, setPrices }) {
           <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-3">
             {editingId === item.id ? (
               <div className="space-y-2">
-                <p className="font-medium text-sm text-gray-800">{item.voce}</p>
                 <div className="flex gap-2 items-center">
-                  <span className="text-xs text-gray-400">€</span>
-                  <input type="number" value={editValues.prezzo} onChange={(e) => setEditValues({...editValues, prezzo: parseFloat(e.target.value)})} className="w-24 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
+                  <span className="text-xs text-gray-400">Costo €</span>
+                  <input type="number" value={editValues.costoInterno} onChange={(e) => setEditValues({...editValues, costoInterno: parseFloat(e.target.value)})} className="w-20 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
+                  <span className="text-xs text-gray-400">→ Prezzo €</span>
+                  <input type="number" value={editValues.prezzo} onChange={(e) => setEditValues({...editValues, prezzo: parseFloat(e.target.value)})} className="w-20 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
                   <span className="text-xs text-gray-400">/{item.unita}</span>
                   <div className="ml-auto flex gap-1">
                     <button onClick={() => saveEdit(item.id)} className="p-1 bg-green-500 text-white rounded"><Check size={14} /></button>
                     <button onClick={() => setEditingId(null)} className="p-1 bg-gray-300 text-white rounded"><X size={14} /></button>
                   </div>
+                </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-400">IVA:</span>
@@ -1430,9 +1465,9 @@ function PriceDatabase({ prices, setPrices }) {
                 <div>
                   <p className="font-medium text-sm text-gray-800">{item.voce}</p>
                   <p className="text-xs text-gray-400">{item.categoria} · {item.note} · <span className="text-orange-500">IVA {item.iva || 22}%</span></p>
+                  <p className="text-xs text-gray-500 mt-1">Costo: €{item.costoInterno} → Vendita: €{item.prezzo} · Margine: {item.prezzo > 0 ? ((item.prezzo-item.costoInterno)/item.prezzo*100).toFixed(0) : 0}%</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-orange-600 text-sm">€{item.prezzo}/{item.unita}</span>
                   <button onClick={() => startEdit(item)} className="p-1 text-gray-400 hover:text-orange-500"><Edit3 size={14} /></button>
                   <button onClick={() => deleteItem(item.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
                 </div>
@@ -1834,6 +1869,29 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit }) {
         </div>
       </div>
 
+      {quote.costoTotaleInterno !== undefined && (
+        <div className={`rounded-xl p-4 space-y-2 border-2 ${(subtotaleScontato - quote.costoTotaleInterno) >= 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+          <div className="flex items-center gap-2">
+            <Eye size={18} className={(subtotaleScontato - quote.costoTotaleInterno) >= 0 ? "text-green-600" : "text-red-600"} />
+            <p className={`text-sm font-semibold ${(subtotaleScontato - quote.costoTotaleInterno) >= 0 ? "text-green-800" : "text-red-800"}`}>IL TUO MARGINE</p>
+          </div>
+          <p className="text-xs text-gray-600">(Visibile solo a te - non compare nel PDF)</p>
+          <div className="space-y-1 pt-1">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700">Costo totale interno</span>
+              <span className="font-semibold">€ {quote.costoTotaleInterno.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div className={`flex justify-between text-sm font-bold border-t pt-1 ${(subtotaleScontato - quote.costoTotaleInterno) >= 0 ? "text-green-700" : "text-red-700"}`}>
+              <span>Margine reale</span>
+              <span>€ {(subtotaleScontato - quote.costoTotaleInterno).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div className={`text-xs font-medium ${(subtotaleScontato - quote.costoTotaleInterno) >= 0 ? "text-green-600" : "text-red-600"}`}>
+              Margine %: {subtotaleScontato > 0 ? ((subtotaleScontato - quote.costoTotaleInterno) / subtotaleScontato * 100).toFixed(1) : 0}%
+            </div>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={() => onDownloadPDF(quote)}
         className="w-full bg-orange-500 text-white py-3 rounded-xl font-semibold hover:bg-orange-600 transition flex items-center justify-center gap-2"
@@ -1861,6 +1919,168 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit }) {
   );
 }
 
+
+// ========== COSTI FISSI ==========
+function CostiFissiView({ costiFissi, setCostiFissi }) {
+  const [search, setSearch] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editValues, setEditValues] = useState({});
+  const [showAdd, setShowAdd] = useState(false);
+  const [newItem, setNewItem] = useState({ categoria: "", voce: "", importo: 0, frequenza: "mensile", note: "" });
+  const frequenzaOptions = ["mensile", "annuale"];
+
+  const categories = [...new Set(costiFissi.map(c => c.categoria))];
+  const [selectedCat, setSelectedCat] = useState("Tutte");
+
+  const filtered = costiFissi.filter(c => {
+    const matchSearch = c.voce.toLowerCase().includes(search.toLowerCase()) || c.categoria.toLowerCase().includes(search.toLowerCase());
+    const matchCat = selectedCat === "Tutte" || c.categoria === selectedCat;
+    return matchSearch && matchCat;
+  });
+
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditValues({ importo: item.importo, frequenza: item.frequenza, note: item.note });
+  };
+
+  const saveEdit = (id) => {
+    setCostiFissi(costiFissi.map(c => c.id === id ? { ...c, ...editValues } : c));
+    setEditingId(null);
+  };
+
+  const addItem = () => {
+    if (newItem.voce && newItem.categoria) {
+      setCostiFissi([...costiFissi, { ...newItem, id: Date.now(), importo: parseFloat(newItem.importo) }]);
+      setNewItem({ categoria: "", voce: "", importo: 0, frequenza: "mensile", note: "" });
+      setShowAdd(false);
+    }
+  };
+
+  const deleteItem = (id) => {
+    setCostiFissi(costiFissi.filter(c => c.id !== id));
+  };
+
+  const costoMensile = filtered.reduce((sum, item) => {
+    const importoMensile = item.frequenza === "annuale" ? item.importo / 12 : item.importo;
+    return sum + importoMensile;
+  }, 0);
+  const costoAnnuale = costoMensile * 12;
+  const costoGiornaliero = costoMensile / 22;
+
+  return (
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-bold text-gray-800 text-lg">Costi Fissi</h2>
+          <p className="text-gray-400 text-xs">{costiFissi.length} voci totali</p>
+        </div>
+        <button onClick={() => setShowAdd(!showAdd)} className="bg-orange-500 text-white p-2 rounded-xl hover:bg-orange-600 transition">
+          <Plus size={18} />
+        </button>
+      </div>
+
+      <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-2">
+        <p className="text-green-800 font-semibold text-sm">Riepilogo Costi</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <p className="text-green-700 text-xs">Mensile</p>
+            <p className="text-green-900 font-bold">€ {costoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</p>
+          </div>
+          <div>
+            <p className="text-green-700 text-xs">Annuale</p>
+            <p className="text-green-900 font-bold">€ {costoAnnuale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-green-700 text-xs">Costo giornaliero (lavorativo)</p>
+            <p className="text-green-900 font-bold">€ {costoGiornaliero.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</p>
+          </div>
+        </div>
+      </div>
+
+      {showAdd && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-2">
+          <p className="text-sm font-semibold text-orange-800">Nuovo costo fisso</p>
+          <select value={newItem.categoria} onChange={(e) => setNewItem({...newItem, categoria: e.target.value})} className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none">
+            <option value="">Categoria...</option>
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            <option value="__new">+ Nuova categoria</option>
+          </select>
+          {newItem.categoria === "__new" && (
+            <input placeholder="Nome nuova categoria" onChange={(e) => setNewItem({...newItem, categoria: e.target.value})} className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+          )}
+          <input value={newItem.voce} onChange={(e) => setNewItem({...newItem, voce: e.target.value})} placeholder="Nome voce" className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+          <div className="flex gap-2">
+            <input type="number" value={newItem.importo} onChange={(e) => setNewItem({...newItem, importo: e.target.value})} placeholder="Importo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+            <select value={newItem.frequenza} onChange={(e) => setNewItem({...newItem, frequenza: e.target.value})} className="p-2 border border-orange-200 rounded-lg text-sm focus:outline-none">
+              <option value="mensile">Mensile</option>
+              <option value="annuale">Annuale</option>
+            </select>
+          </div>
+          <input value={newItem.note} onChange={(e) => setNewItem({...newItem, note: e.target.value})} placeholder="Note (opzionale)" className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+          <div className="flex gap-2">
+            <button onClick={addItem} className="flex-1 bg-orange-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-orange-600">Aggiungi</button>
+            <button onClick={() => setShowAdd(false)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-500">Annulla</button>
+          </div>
+        </div>
+      )}
+
+      <div className="relative">
+        <Search size={16} className="absolute left-3 top-3 text-gray-400" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cerca voce o categoria..." className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-orange-400 focus:outline-none" />
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        <button onClick={() => setSelectedCat("Tutte")} className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition ${selectedCat === "Tutte" ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+          Tutte
+        </button>
+        {categories.map(cat => (
+          <button key={cat} onClick={() => setSelectedCat(cat)} className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition ${selectedCat === cat ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-2 max-h-96 overflow-y-auto">
+        {filtered.map(item => {
+          const importoMensile = item.frequenza === "annuale" ? item.importo / 12 : item.importo;
+          return (
+            <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-3">
+              {editingId === item.id ? (
+                <div className="space-y-2">
+                  <p className="font-medium text-sm text-gray-800">{item.voce}</p>
+                  <div className="flex gap-2 items-center">
+                    <span className="text-xs text-gray-400">€</span>
+                    <input type="number" value={editValues.importo} onChange={(e) => setEditValues({...editValues, importo: parseFloat(e.target.value)})} className="w-24 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
+                    <select value={editValues.frequenza} onChange={(e) => setEditValues({...editValues, frequenza: e.target.value})} className="p-1 border border-orange-300 rounded text-sm focus:outline-none">
+                      <option value="mensile">Mensile</option>
+                      <option value="annuale">Annuale</option>
+                    </select>
+                    <div className="ml-auto flex gap-1">
+                      <button onClick={() => saveEdit(item.id)} className="p-1 bg-green-500 text-white rounded"><Check size={14} /></button>
+                      <button onClick={() => setEditingId(null)} className="p-1 bg-gray-300 text-white rounded"><X size={14} /></button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-sm text-gray-800">{item.voce}</p>
+                    <p className="text-xs text-gray-400">{item.categoria} · {item.note}</p>
+                    <p className="text-xs text-gray-500 mt-1">€ {importoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}/mese {item.frequenza === "annuale" ? `(€ ${item.importo.toLocaleString("it-IT", { minimumFractionDigits: 2 })}/anno)` : ""}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => startEdit(item)} className="p-1 text-gray-400 hover:text-orange-500"><Edit3 size={14} /></button>
+                    <button onClick={() => deleteItem(item.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 function StoricoView({ quotes, onViewQuote }) {
   if (quotes.length === 0) {
     return (
@@ -1968,6 +2188,7 @@ function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadP
       ivaTotal += (importoVoce * proporzione) * (aliquota / 100);
     });
     const totale = subtotaleScontato + ivaTotal;
+    const costoTotaleInterno = items.reduce((sum, item) => sum + (item.costoInterno || 0) * item.quantita, 0);
 
     const savedQuote = {
       cliente: clientInfo.nome,
@@ -1986,7 +2207,8 @@ function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadP
       pagamento: pagamento,
       photos: photos,
       firmaImpresa: firmaImpresa,
-      luogoFirma: luogoFirma
+      luogoFirma: luogoFirma,
+        costoTotaleInterno: costoTotaleInterno
     };
 
     onSaveQuote(savedQuote);
@@ -2281,6 +2503,7 @@ export default function App({ session }) {
   const [prices, setPrices] = useState(DEFAULT_PRICES);
   const [quotes, setQuotes] = useState([]);
   const [clients, setClients] = useState([]);
+  const [costiFissi, setCostiFissi] = useState(DEFAULT_COSTI_FISSI);
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [editingQuote, setEditingQuote] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -2400,6 +2623,15 @@ export default function App({ session }) {
       }).select().single();
       const newQuote = data ? { ...quote, _supabaseId: data.id } : quote;
       setQuotes([newQuote, ...quotes]);
+      // Auto-insert client if not in database
+      const clienteNome = quote.clientInfo?.nome?.trim();
+      if (clienteNome) {
+        const exists = clients.some(c => c.nome.toLowerCase() === clienteNome.toLowerCase());
+        if (!exists) {
+          const newClient = { id: Date.now(), tipo: "Privato", nome: clienteNome, codiceFiscale: "", email: quote.clientInfo?.email || "", whatsapp: quote.clientInfo?.telefono || "", indirizzo: quote.clientInfo?.indirizzo || "", note: "Auto-inserito da preventivo" };
+          setClients(prev => [newClient, ...prev]);
+        }
+      }
     }
   };
 
@@ -2413,10 +2645,15 @@ export default function App({ session }) {
     setCurrentView("modifica");
   };
 
+  const costoMensile = costiFissi.reduce((sum, item) => {
+    return sum + (item.frequenza === "annuale" ? item.importo / 12 : item.importo);
+  }, 0);
+
   const stats = {
     totalPrices: prices.length,
     totalQuotes: quotes.length,
-    totalClients: clients.length
+    totalClients: clients.length,
+    costoMensile
   };
 
   const isSubscribed = subscriptionStatus === "active" || subscriptionStatus === "trialing";
@@ -2465,6 +2702,7 @@ export default function App({ session }) {
         )}
         {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={setPrices} /></div>}
         {currentView === "clienti" && <ClientDatabase clients={clients} setClients={setClients} />}
+          {currentView === "costifissi" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-2 text-orange-500 font-medium mb-2 p-4 pb-0"><ChevronLeft size={20} /> Indietro</button><CostiFissiView costiFissi={costiFissi} setCostiFissi={setCostiFissi} /></div>}
         {currentView === "storico" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><StoricoView quotes={quotes} onViewQuote={handleViewQuote} /></div>}
         {currentView === "dettaglio" && selectedQuote && (
           <QuoteDetailView
