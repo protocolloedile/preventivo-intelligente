@@ -1507,7 +1507,7 @@ function ClientDatabase({ clients, setClients }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
-  const emptyClient = { tipo: "Privato", nome: "", codiceFiscale: "", email: "", whatsapp: "", indirizzo: "", note: "" };
+  const emptyClient = { tipo: "Privato", nome: "", codiceFiscale: quote.clientInfo?.codiceFiscale || "", email: "", whatsapp: "", indirizzo: "", note: "" };
   const [newClient, setNewClient] = useState({ ...emptyClient });
 
   const filtered = clients.filter(c =>
@@ -2563,7 +2563,7 @@ export default function App({ session }) {
         const { data: clientsData } = await supabase.from("clients").select("*").eq("user_id", userId).order("created_at", { ascending: false });
         if (clientsData) {
           setClients(clientsData.map(c => ({
-            id: c.id, nome: c.nome, indirizzo: c.indirizzo || "", telefono: c.telefono || "", email: c.email || "", note: c.note || "",
+            id: c.id, nome: c.nome, codiceFiscale: c.codice_fiscale || "", indirizzo: c.indirizzo || "", telefono: c.telefono || "", email: c.email || "", note: c.note || "",
           })));
         }
 
@@ -2610,7 +2610,7 @@ export default function App({ session }) {
     if (newClients.length > 0) {
       await supabase.from("clients").insert(newClients.map(c => ({
         user_id: session.user.id,
-        nome: c.nome || "", indirizzo: c.indirizzo || "", telefono: c.telefono || c.whatsapp || "", email: c.email || "", note: c.note || "",
+        nome: c.nome || "", codice_fiscale: c.codiceFiscale || "", indirizzo: c.indirizzo || "", telefono: c.telefono || c.whatsapp || "", email: c.email || "", note: c.note || "",
       })));
     }
   };
@@ -2642,12 +2642,13 @@ export default function App({ session }) {
       setQuotes([newQuote, ...quotes]);
       // Auto-insert client if not in database
       const clienteNome = quote.clientInfo?.nome?.trim();
+      const clienteCF = quote.clientInfo?.codiceFiscale?.trim();
       if (clienteNome) {
-        const exists = clients.some(c => c.nome.toLowerCase() === clienteNome.toLowerCase());
+        const exists = clienteCF ? clients.some(c => c.codiceFiscale && c.codiceFiscale.toLowerCase() === clienteCF.toLowerCase()) : clients.some(c => c.nome.toLowerCase() === clienteNome.toLowerCase());
         if (!exists) {
             const newClient = { id: Date.now(), tipo: "Privato", nome: clienteNome, codiceFiscale: "", email: quote.clientInfo?.email || "", whatsapp: quote.clientInfo?.telefono || "", indirizzo: quote.clientInfo?.indirizzo || "", note: "Auto-inserito da preventivo" };
             setClients(prev => [newClient, ...prev]);
-            await supabase.from("clients").insert({ user_id: session.user.id, nome: clienteNome, email: quote.clientInfo?.email || "", telefono: quote.clientInfo?.telefono || "", indirizzo: quote.clientInfo?.indirizzo || "", note: "Auto-inserito da preventivo" });
+            await supabase.from("clients").insert({ user_id: session.user.id, nome: clienteNome, codice_fiscale: quote.clientInfo?.codiceFiscale || "", email: quote.clientInfo?.email || "", telefono: quote.clientInfo?.telefono || "", indirizzo: quote.clientInfo?.indirizzo || "", note: "Auto-inserito da preventivo" });
         }
       }
     }
