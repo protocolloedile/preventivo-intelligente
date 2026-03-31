@@ -2579,9 +2579,9 @@ export default function App({ session }) {
               cliente: meta?.cliente || "", clientInfo: meta?.clientInfo || {},
               discount: meta?.discount, margin: meta?.margin,
               firmaImpresa: meta?.firmaImpresa || "", luogoFirma: meta?.luogoFirma || "",
-              costoTotaleInterno: meta?.costoTotaleInterno || 0,
               costoTotaleInterno: meta?.costoTotaleInterno || 0, voci: realItems.length,
               created_at: q.created_at, data: new Date(q.created_at).toLocaleDateString("it-IT"),
+            };
           }));
         }
         setDataLoaded(true);
