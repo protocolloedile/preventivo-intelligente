@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Mic, MicOff, FileText, Database, Plus, Trash2, Edit3, Check, X, Download, Volume2, ChevronRight, ChevronUp, ChevronDown, Home, ArrowLeft, Search, Save, RefreshCw, Eye, Printer, Users, UserPlus, Phone, Camera, Image, Send, Mail, MessageCircle, GripVertical, Settings, Upload, Building2, LogOut, User } from "lucide-react";
+import { Mic, MicOff, FileText, Database, Plus, Trash2, Edit3, Check, X, Download, Volume2, ChevronRight, ChevronUp, ChevronDown, Home, ArrowLeft, Search, Save, RefreshCw, Eye, Printer, Users, UserPlus, Phone, Camera, Image, Send, Mail, MessageCircle, GripVertical, Settings, Upload, Building2, LogOut, User, TrendingUp } from "lucide-react";
 import { supabase } from "./supabaseClient";
 
 // ========== DATABASE PREZZI DEFAULT ==========
@@ -1176,6 +1176,36 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
           <span className="text-orange-600 text-lg">€ {totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
         </div>
       </div>
+
+      {/* IL TUO MARGINE - Anteprima */}
+      {(() => {
+        const costoTotaleInterno = items.reduce((sum, item) => sum + ((parseFloat(item.costoInterno) || 0) * (parseFloat(item.quantita) || 0)), 0);
+        const margineReale = subtotaleScontato - costoTotaleInterno;
+        const marginePerc = subtotaleScontato > 0 ? (margineReale / subtotaleScontato * 100).toFixed(1) : 0;
+        const isPositive = margineReale >= 0;
+        return (
+          <div className={`border-2 ${isPositive ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"} rounded-xl p-4 space-y-2`}>
+            <div className="flex items-center gap-2">
+              <TrendingUp size={16} className={isPositive ? "text-green-600" : "text-red-600"} />
+              <p className={`text-sm font-semibold ${isPositive ? "text-green-800" : "text-red-800"}`}>IL TUO MARGINE</p>
+            </div>
+            <p className="text-xs text-gray-600">(Visibile solo a te - non compare nel PDF)</p>
+            <div className="space-y-1 pt-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-700">Costo totale interno</span>
+                <span className="font-semibold">€ {costoTotaleInterno.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className={`flex justify-between text-sm font-bold border-t pt-1 ${isPositive ? "text-green-700" : "text-red-700"}`}>
+                <span>Margine reale</span>
+                <span>€ {margineReale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className={`text-xs font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}>
+                Margine %: {marginePerc}%
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* FOTO SOPRALLUOGO */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
