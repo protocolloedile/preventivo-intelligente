@@ -1612,7 +1612,7 @@ function ClientDatabase({ clients, setClients }) {
 }
 
 // ========== SHARE / INOLTRA PREVENTIVO ==========
-function PricingPage({ onSubscribe, onLogout, userEmail }) {
+function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
   const [promoCode, setPromoCode] = useState("");
   const [promoError, setPromoError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1643,7 +1643,7 @@ function PricingPage({ onSubscribe, onLogout, userEmail }) {
               <span className="text-gray-500">/mese</span>
             </div>
             <ul className="space-y-3 mb-6">
-              {["Preventivi illimitati", "Generazione PDF professionale", "Invio WhatsApp ed Email", "Prompt vocale AI", "Gestione clienti", "Prezzario personalizzabile", "Aggiornamenti continui", "Supporto prioritario", "Supporto WhatsApp 7/7"].map((f, i) => (
+              {["Preventivi illimitati", "Generazione PDF professionale", "Invio WhatsApp ed Email", "Prompt vocale AI", "Gestione clienti", "Prezzario personalizzabile", "Aggiornamenti continui", "Supporto WhatsApp 7/7"].map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-gray-700">
                   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
                   {f}
@@ -1663,7 +1663,8 @@ function PricingPage({ onSubscribe, onLogout, userEmail }) {
             </div>
           </div>
         </div>
-        <button onClick={onLogout} className="w-full mt-4 text-gray-400 hover:text-gray-600 text-sm py-2 transition">Esci dall'account</button>
+          {onBack && <button onClick={onBack} className="w-full mt-4 flex items-center justify-center gap-1 text-orange-500 hover:text-orange-600 text-sm py-2 transition"><ArrowLeft size={16} /><span>Indietro</span></button>}
+          <button onClick={onLogout} className="w-full mt-2 text-gray-400 hover:text-gray-600 text-sm py-2 transition">Esci dall'account</button>
       </div>
     </div>
   );
@@ -2679,7 +2680,7 @@ export default function App({ session }) {
   };
 
   if (dataLoaded && (!isSubscribed || showPricing)) {
-    return <PricingPage onSubscribe={handleSubscribe} onLogout={handleLogout} userEmail={session?.user?.email} />;
+    return <PricingPage onSubscribe={handleSubscribe} onLogout={handleLogout} onBack={showPricing ? () => setShowPricing(false) : null} userEmail={session?.user?.email} />;
   }
 
   return (
