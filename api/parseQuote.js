@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: 'Sei un esperto di edilizia e ristrutturazioni in Italia. Il tuo compito è analizzare la descrizione vocale di un lavoro edile e selezionare le voci di costo appropriate dal database prezzi del cliente. Rispondi SOLO con un JSON array. Ogni elemento deve avere: "voce" (il nome esatto dal database), "quantita" (numero stimato in base alla descrizione). Se la descrizione menziona metrature, usale per calcolare le quantità. Se non sono specificate, usa stime ragionevoli per un intervento standard. Seleziona SOLO voci che esistono nel database fornito. Non inventare voci nuove.'
+            content: 'Sei un esperto di edilizia e ristrutturazioni in Italia. Il tuo compito è analizzare la descrizione vocale di un lavoro edile e selezionare le voci di costo appropriate dal database prezzi del cliente. Rispondi SOLO con un JSON array. Ogni elemento deve avere: "voce" (il nome ESATTO e IDENTICO copiato dal database, senza modifiche), "quantita" (numero stimato in base alla descrizione). Se la descrizione menziona metrature, usale per calcolare le quantità. Se non sono specificate, usa stime ragionevoli per un intervento standard. Seleziona SOLO voci che esistono nel database fornito. Non inventare voci nuove. IMPORTANTE: il campo "voce" deve essere copiato ESATTAMENTE come appare nel database, carattere per carattere.'
           },
           {
             role: 'user',
@@ -47,8 +47,39 @@ export default async function handler(req, res) {
 
     const selectedItems = JSON.parse(resultText);
 
+    // Fuzzy matching: try exact, then case-insensitive, then includes
+    function findBestMatch(selVoce, db) {
+      const selNorm = selVoce.toLowerCase().trim();
+      // 1. Exact match
+      let match = db.find(p => p.voce === selVoce);
+      if (match) return match;
+      // 2. Case-insensitive trimmed match
+      match = db.find(p => p.voce.toLowerCase().trim() === selNorm);
+      if (match) return match;
+      // 3. One contains the other
+      match = db.find(p => {
+        const pNorm = p.voce.toLowerCase().trim();
+        return pNorm.includes(selNorm) || selNorm.includes(pNorm);
+      });
+      if (match) return match;
+      // 4. Word overlap scoring
+      const selWords = selNorm.split(/\s+/);
+      let bestScore = 0;
+      let bestMatch = null;
+      for (const p of db) {
+        const pWords = p.voce.toLowerCase().trim().split(/\s+/);
+        const common = selWords.filter(w => pWords.some(pw => pw.includes(w) || w.includes(pw)));
+        const score = common.length / Math.max(selWords.length, pWords.length);
+        if (score > bestScore && score >= 0.5) {
+          bestScore = score;
+          bestMatch = p;
+        }
+      }
+      return bestMatch;
+    }
+
     const matchedItems = selectedItems.map(sel => {
-      const dbItem = priceDB.find(p => p.voce === sel.voce);
+      const dbItem = findBestMatch(sel.voce, priceDB);
       if (!dbItem) return null;
       const qta = sel.quantita || 1;
       return {
