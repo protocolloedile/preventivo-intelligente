@@ -2043,6 +2043,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {filtered.map(item => {
           const importoMensile = item.frequenza === "annuale" ? item.importo / 12 : item.importo;
+            const importoAnnuale = item.frequenza === "annuale" ? item.importo : item.importo * 12;
           return (
             <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-3">
               {editingId === item.id ? (
@@ -2066,7 +2067,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
                   <div>
                     <p className="font-medium text-sm text-gray-800">{item.voce}</p>
                     <p className="text-xs text-gray-400">{item.categoria} · {item.note}</p>
-                    <p className="text-xs text-gray-500 mt-1">€ {importoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}/mese {item.frequenza === "annuale" ? `(€ ${item.importo.toLocaleString("it-IT", { minimumFractionDigits: 2 })}/anno)` : ""}</p>
+                <p className="text-xs text-gray-500 mt-1">€ {importoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}/mese (€ {(item.frequenza === "annuale" ? item.importo : item.importo * 12).toLocaleString("it-IT", { minimumFractionDigits: 2 })}/anno)</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => startEdit(item)} className="p-1 text-gray-400 hover:text-orange-500"><Edit3 size={14} /></button>
@@ -2701,7 +2702,7 @@ export default function App({ session }) {
           />
         )}
         {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={setPrices} /></div>}
-        {currentView === "clienti" && <ClientDatabase clients={clients} setClients={setClients} />}
+          {currentView === "clienti" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><ClientDatabase clients={clients} setClients={setClients} /></div>}
           {currentView === "costifissi" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><CostiFissiView costiFissi={costiFissi} setCostiFissi={setCostiFissi} /></div>}
         {currentView === "storico" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><StoricoView quotes={quotes} onViewQuote={handleViewQuote} /></div>}
         {currentView === "dettaglio" && selectedQuote && (
