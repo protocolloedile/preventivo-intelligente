@@ -76,99 +76,24 @@ const DEFAULT_COSTI_FISSI = [
 ];
 
 // ========== AI SIMULATION ==========
-function parseVoiceToQuote(transcript, priceDB) {
-  const text = transcript.toLowerCase();
-  const matchedItems = [];
-
-  const keywords = {
-    "bagno": [
-      { voce: "Demolizione rivestimento bagno", qta: 25 },
-      { voce: "Rimozione vasca da bagno", qta: 1 },
-      { voce: "Rimozione sanitari", qta: 3 },
-      { voce: "Punto acqua", qta: 3 },
-      { voce: "Punto scarico", qta: 2 },
-      { voce: "Posa rivestimento bagno", qta: 25 },
-      { voce: "Posa pavimento gres", qta: 6 },
-      { voce: "Installazione piatto doccia", qta: 1 },
-      { voce: "Installazione WC", qta: 1 },
-      { voce: "Installazione lavabo", qta: 1 },
-    ],
-    "doccia": [{ voce: "Rimozione vasca da bagno", qta: 1 }, { voce: "Installazione piatto doccia", qta: 1 }],
-    "vasca": [{ voce: "Rimozione vasca da bagno", qta: 1 }],
-    "paviment": [{ voce: "Demolizione pavimento", qta: 40 }, { voce: "Massetto tradizionale", qta: 40 }, { voce: "Posa pavimento gres", qta: 40 }, { voce: "Battiscopa in gres", qta: 24 }],
-    "piastrell": [{ voce: "Posa pavimento gres", qta: 20 }, { voce: "Posa rivestimento bagno", qta: 15 }],
-    "elettric": [{ voce: "Impianto elettrico completo", qta: 60 }, { voce: "Quadro elettrico", qta: 1 }],
-    "punto luce": [{ voce: "Punto luce", qta: 10 }],
-    "presa": [{ voce: "Punto presa", qta: 8 }],
-    "caldaia": [{ voce: "Installazione caldaia", qta: 1 }],
-    "pittura": [{ voce: "Tinteggiatura pareti", qta: 80 }, { voce: "Tinteggiatura soffitto", qta: 40 }],
-    "tintegg": [{ voce: "Tinteggiatura pareti", qta: 80 }, { voce: "Tinteggiatura soffitto", qta: 40 }],
-    "imbianc": [{ voce: "Tinteggiatura pareti", qta: 80 }, { voce: "Tinteggiatura soffitto", qta: 40 }],
-    "cartongesso": [{ voce: "Costruzione tramezza in cartongesso", qta: 12 }],
-    "tramezzo": [{ voce: "Costruzione tramezza in laterizio", qta: 10 }],
-    "tramezza": [{ voce: "Costruzione tramezza in laterizio", qta: 10 }],
-    "demoliz": [{ voce: "Demolizione pavimento", qta: 20 }, { voce: "Trasporto e smaltimento macerie", qta: 1 }],
-    "infiss": [{ voce: "Finestra PVC doppio vetro", qta: 4 }],
-    "finestra": [{ voce: "Finestra PVC doppio vetro", qta: 2 }],
-    "finestre": [{ voce: "Finestra PVC doppio vetro", qta: 4 }],
-    "porta": [{ voce: "Porta interna tamburata", qta: 1 }],
-    "porte": [{ voce: "Porta interna tamburata", qta: 4 }],
-    "portoncino": [{ voce: "Portoncino blindato", qta: 1 }],
-    "blindat": [{ voce: "Portoncino blindato", qta: 1 }],
-    "intonac": [{ voce: "Intonaco civile", qta: 30 }],
-    "rasat": [{ voce: "Rasatura pareti", qta: 50 }],
-    "controsoffitto": [{ voce: "Controsoffitto in cartongesso", qta: 15 }],
-    "massetto": [{ voce: "Massetto tradizionale", qta: 30 }],
-    "pulizia": [{ voce: "Pulizia fine cantiere", qta: 1 }],
-    "smaltimento": [{ voce: "Trasporto e smaltimento macerie", qta: 1 }],
-    "ponteggio": [{ voce: "Ponteggio esterno", qta: 50 }],
-    "stucco veneziano": [{ voce: "Stucco veneziano", qta: 20 }],
-    "ristruttur": [
-      { voce: "Demolizione pavimento", qta: 50 },
-      { voce: "Trasporto e smaltimento macerie", qta: 1 },
-      { voce: "Massetto tradizionale", qta: 50 },
-      { voce: "Posa pavimento gres", qta: 50 },
-      { voce: "Battiscopa in gres", qta: 30 },
-      { voce: "Rasatura pareti", qta: 120 },
-      { voce: "Tinteggiatura pareti", qta: 120 },
-      { voce: "Tinteggiatura soffitto", qta: 50 },
-      { voce: "Pulizia fine cantiere", qta: 1 },
-    ],
-  };
-
-  // Detect numbers for area
-  const areaMatch = text.match(/(\d+)\s*(mq|metri quadr)/);
-  const area = areaMatch ? parseInt(areaMatch[1]) : null;
-
-  const addedVoci = new Set();
-
-  for (const [keyword, items] of Object.entries(keywords)) {
-    if (text.includes(keyword)) {
-      for (const item of items) {
-        if (!addedVoci.has(item.voce)) {
-          const dbItem = priceDB.find(p => p.voce === item.voce);
-          if (dbItem) {
-            let qta = item.qta;
-            if (area && (dbItem.unita === "mq" || dbItem.unita === "ml")) {
-              qta = dbItem.unita === "ml" ? Math.round(Math.sqrt(area) * 4) : area;
-            }
-            matchedItems.push({
-              ...dbItem,
-              quantita: qta,
-              totale: qta * dbItem.prezzo
-            });
-            addedVoci.add(item.voce);
-          }
-        }
-      }
+async function parseVoiceToQuote(transcript, priceDB) {
+  if (!transcript || !transcript.trim() || !priceDB || !priceDB.length) return null;
+  
+  try {
+    const response = await fetch('/api/parseQuote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript: transcript.trim(), priceDB })
+    });
+    const data = await response.json();
+    if (data.items && data.items.length > 0) {
+      return data.items;
     }
-  }
-
-  if (matchedItems.length === 0) {
+    return null;
+  } catch (error) {
+    console.error('Errore selezione materiali AI:', error);
     return null;
   }
-
-  return matchedItems;
 }
 
 // ========== COMPONENTS ==========
@@ -921,7 +846,40 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
               </div>
             )}
           </div>
+        {items.length > 0 && (
+          <button
+            onClick={isModifyRecording ? stopModifyRecording : startModifyRecording}
+            disabled={isAIProcessing}
+            className={`text-xs font-medium flex items-center gap-1 ${
+              isModifyRecording 
+                ? "text-red-500 animate-pulse" 
+                : "text-blue-500 hover:text-blue-600"
+            } ${isAIProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            {isModifyRecording ? <MicOff size={12} /> : <Mic size={12} />}
+            {isModifyRecording ? "Stop modifica" : "Modifica con audio"}
+          </button>
+        )}
         </div>
+
+
+        {/* AI Processing indicator */}
+        {isAIProcessing && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+            <p className="text-xs text-blue-600 font-medium">L'AI sta elaborando...</p>
+          </div>
+        )}
+
+        {/* Modify transcript display */}
+        {(isModifyRecording || modifyTranscript) && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-xs text-blue-400 mb-1 font-medium">
+              {isModifyRecording ? "Sto ascoltando la modifica..." : "MODIFICA RICHIESTA"}
+            </p>
+            <p className="text-gray-700 text-sm">{modifyTranscript || "Parla per modificare il preventivo..."}</p>
+          </div>
+        )}
 
         {/* Picker dal database prezzi */}
         {showDBPicker && (
@@ -2198,6 +2156,10 @@ function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadP
   const [transcript, setTranscript] = useState(isEditing ? (initialData.descrizione || "") : "");
   const [clientInfo, setClientInfo] = useState(isEditing ? (initialData.clientInfo || { nome: "", indirizzo: "", telefono: "" }) : { nome: "", indirizzo: "", telefono: "" });
   const [error, setError] = useState("");
+  const [isAIProcessing, setIsAIProcessing] = useState(false);
+  const [isModifyRecording, setIsModifyRecording] = useState(false);
+  const [modifyTranscript, setModifyTranscript] = useState("");
+  const modifyRecognitionRef = useRef(null);
   const [discount, setDiscount] = useState(isEditing ? (initialData.discount || { enabled: false, tipo: "percentuale", valore: 0 }) : { enabled: false, tipo: "percentuale", valore: 0 });
   const [margin, setMargin] = useState(isEditing ? (initialData.margin || { enabled: false, tipo: "percentuale", valore: 20 }) : { enabled: false, tipo: "percentuale", valore: 20 });
   const [lastSavedQuote, setLastSavedQuote] = useState(null);
@@ -2216,16 +2178,89 @@ function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadP
   const [firmaImpresa, setFirmaImpresa] = useState(isEditing ? (initialData.firmaImpresa || "") : (userProfile?.nomeAzienda || ""));
   const [luogoFirma, setLuogoFirma] = useState(isEditing ? (initialData.luogoFirma || "") : (""));
 
-  const handleTranscript = (text) => {
+const startModifyRecording = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Il tuo browser non supporta il riconoscimento vocale.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "it-IT";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        finalTranscript += event.results[i][0].transcript;
+      }
+      setModifyTranscript(finalTranscript);
+    };
+
+    recognition.onerror = () => {
+      setIsModifyRecording(false);
+    };
+
+    modifyRecognitionRef.current = recognition;
+    recognition.start();
+    setIsModifyRecording(true);
+    setModifyTranscript("");
+  };
+
+  const stopModifyRecording = async () => {
+    if (modifyRecognitionRef.current) {
+      modifyRecognitionRef.current.stop();
+    }
+    setIsModifyRecording(false);
+    
+    if (!modifyTranscript.trim()) return;
+    
+    setIsAIProcessing(true);
+    setError("");
+    try {
+      const response = await fetch('/api/modifyQuote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instruction: modifyTranscript.trim(),
+          currentItems: items,
+          priceDB: prices
+        })
+      });
+      const data = await response.json();
+      if (data.items) {
+        setItems(data.items);
+        setModifyTranscript("");
+      } else {
+        setError("Errore nella modifica. Riprova.");
+      }
+    } catch (err) {
+      console.error('Errore modifica vocale:', err);
+      setError("Errore di connessione. Riprova.");
+    } finally {
+      setIsAIProcessing(false);
+    }
+  };
+
+  const handleTranscript = async (text) => {
     setTranscript(text);
     setDescrizione(text);
-    const result = parseVoiceToQuote(text, prices);
-    if (result) {
-      setItems(result);
-      setStep("edit");
-      setError("");
-    } else {
-      setError("Non sono riuscito a identificare i lavori dalla descrizione. Prova ad essere più specifico (es: 'ristrutturazione bagno', 'impianto elettrico', 'posa pavimento 40mq').");
+    setError("");
+    setIsAIProcessing(true);
+    try {
+      const result = await parseVoiceToQuote(text, prices);
+      if (result) {
+        setItems(result);
+        setStep("edit");
+        setError("");
+      } else {
+        setError("L'AI non ha trovato materiali corrispondenti. Prova ad essere piu' specifico (es: 'ristrutturazione bagno 15mq', 'impianto elettrico appartamento 80mq').");
+      }
+    } catch (err) {
+      console.error('Errore:', err);
+      setError("Errore nella selezione dei materiali. Riprova.");
+    } finally {
+      setIsAIProcessing(false);
     }
   };
 
