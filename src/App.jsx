@@ -2083,7 +2083,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
     </div>
   );
 }
-function StoricoView({ quotes, onViewQuote }) {
+function StoricoView({ quotes, onViewQuote, onDeleteQuote }) {
   if (quotes.length === 0) {
     return (
       <div className="p-4 text-center py-12">
@@ -2111,12 +2111,17 @@ function StoricoView({ quotes, onViewQuote }) {
           </div>
           <div className="flex items-center justify-between mt-2">
             <p className="text-gray-500 text-xs">{q.voci} voci · {q.descrizione?.substring(0, 50)}...</p>
-            <div className="flex items-center gap-1 text-orange-500 text-xs font-medium">
-              <Eye size={12} />
-              <span>Apri</span>
-            </div>
-          </div>
-        </button>
+            <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-orange-500 text-xs font-medium">
+                    <Eye size={12} />
+                    <span>Apri</span>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); if (window.confirm("Eliminare questo preventivo?")) onDeleteQuote(q, i); }} className="text-red-400 hover:text-red-600 transition p-1">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            </button>
       ))}
     </div>
   );
@@ -2664,6 +2669,14 @@ export default function App({ session }) {
     setCurrentView("modifica");
   };
 
+  const handleDeleteQuote = async (quote, index) => {
+    const updated = quotes.filter((_, i) => i !== index);
+    setQuotes(updated);
+    if (quote._supabaseId) {
+      await supabase.from("quotes").delete().eq("id", quote._supabaseId);
+    }
+  };
+
   const costoMensile = costiFissi.reduce((sum, item) => {
     return sum + (item.frequenza === "annuale" ? item.importo / 12 : item.importo);
   }, 0);
@@ -2722,7 +2735,7 @@ export default function App({ session }) {
         {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={setPrices} /></div>}
           {currentView === "clienti" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><ClientDatabase clients={clients} setClients={syncClientsToSupabase} /></div>}
           {currentView === "costifissi" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><CostiFissiView costiFissi={costiFissi} setCostiFissi={setCostiFissi} /></div>}
-        {currentView === "storico" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><StoricoView quotes={quotes} onViewQuote={handleViewQuote} /></div>}
+        {currentView === "storico" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><StoricoView quotes={quotes} onViewQuote={handleViewQuote} onDeleteQuote={handleDeleteQuote} /></div>}
         {currentView === "dettaglio" && selectedQuote && (
           <QuoteDetailView
             quote={selectedQuote}
