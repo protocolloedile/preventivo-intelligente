@@ -730,7 +730,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" onBlur={(e) => { if (e.target.type === "number" && e.target.value) { const clean = String(parseFloat(e.target.value) || 0); if (e.target.value !== clean) { e.target.type = "text"; e.target.value = clean; e.target.type = "number"; } } }}>
       <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2">
         <Check size={18} className="text-green-600" />
         <p className="text-green-700 text-sm font-medium">Preventivo generato dall'AI!</p>
@@ -1066,7 +1066,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-blue-800">📊 Margine di guadagno</p>
+            <p className="text-sm font-semibold text-blue-800">📊 Ricarico ulteriore da inserire</p>
             <p className="text-xs text-blue-500">Ricarico % o a corpo sul costo base (non visibile al cliente)</p>
           </div>
           <button
