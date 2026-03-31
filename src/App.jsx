@@ -2702,7 +2702,7 @@ export default function App({ session }) {
         )}
         {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={setPrices} /></div>}
         {currentView === "clienti" && <ClientDatabase clients={clients} setClients={setClients} />}
-          {currentView === "costifissi" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-2 text-orange-500 font-medium mb-2 p-4 pb-0"><ChevronLeft size={20} /> Indietro</button><CostiFissiView costiFissi={costiFissi} setCostiFissi={setCostiFissi} /></div>}
+          {currentView === "costifissi" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><CostiFissiView costiFissi={costiFissi} setCostiFissi={setCostiFissi} /></div>}
         {currentView === "storico" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><StoricoView quotes={quotes} onViewQuote={handleViewQuote} /></div>}
         {currentView === "dettaglio" && selectedQuote && (
           <QuoteDetailView
