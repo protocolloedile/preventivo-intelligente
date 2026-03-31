@@ -1403,7 +1403,7 @@ function PriceDatabase({ prices, setPrices }) {
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
         <p className="text-amber-800 text-xs leading-relaxed">
-          <span className="font-semibold">Inserisci i prezzi per il cliente finale</span>, già comprensivi del tuo ricarico/guadagno. Questi sono i prezzi che compariranno direttamente nel preventivo.
+          <span className="font-semibold">Inserisci qui sotto i costi di acquisto dei diversi materiali</span> e successivamente il costo di vendita con il tuo ricarico/guadagno.<br/><br/>Nel preventivo compariranno solo i prezzi di vendita.
         </p>
       </div>
 
