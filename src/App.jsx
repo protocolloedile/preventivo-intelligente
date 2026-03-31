@@ -641,41 +641,27 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
     setIsDictating(false);
   };
 
-  const reformulateDescription = () => {
+  const reformulateDescription = async () => {
     if (!descrizione || !descrizione.trim()) return;
     setIsReformulating(true);
-    // Simulazione AI: riformulazione intelligente
-    setTimeout(() => {
-      const text = descrizione.trim();
-      // Capitalizza prima lettera, correggi punteggiatura
-      let improved = text.charAt(0).toUpperCase() + text.slice(1);
-      // Aggiungi punto finale se manca
-      if (!/[.!]$/.test(improved)) improved += ".";
-      // Migliora struttura: sostituisci virgole consecutive con punto e a capo
-      improved = improved.replace(/\s*,\s*,\s*/g, ". ");
-      // Espandi abbreviazioni comuni edilizia
-      improved = improved.replace(/\brist\.\s*/gi, "ristrutturazione ");
-      improved = improved.replace(/\bdemol\.\s*/gi, "demolizione ");
-      improved = improved.replace(/\bpav\.\s*/gi, "pavimentazione ");
-      improved = improved.replace(/\brivestim\.\s*/gi, "rivestimento ");
-      improved = improved.replace(/\bimp\.\s*/gi, "impianto ");
-      improved = improved.replace(/\belettric\.\s*/gi, "elettrico ");
-      improved = improved.replace(/\bidraul\.\s*/gi, "idraulico ");
-      // Aggiungi contesto professionale
-      const hasIntro = /^(i lavori|il progetto|l'intervento|la ristrutturazione|si prevede)/i.test(improved);
-      if (!hasIntro) {
-        improved = "I lavori prevedono: " + improved.charAt(0).toLowerCase() + improved.slice(1);
+    try {
+      const response = await fetch('/api/reformulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descrizione: descrizione.trim() })
+      });
+      const data = await response.json();
+      if (data.result) {
+        setDescrizione(data.result);
+      } else {
+        alert('Errore nella riformulazione. Riprova.');
       }
-      // Migliora congiunzioni
-      improved = improved.replace(/\s+e\s+e\s+/g, " e ");
-      improved = improved.replace(/\.\s*\./g, ".");
-      // Aggiungi chiusura professionale se manca
-      if (improved.length > 50 && !/inclus[oiae]|compres[oiae]|sarà|saranno|previsti/i.test(improved)) {
-        improved += " Tutti i lavori saranno eseguiti a regola d'arte e nel rispetto delle normative vigenti.";
-      }
-      setDescrizione(improved);
+    } catch (error) {
+      console.error('Errore:', error);
+      alert('Errore di connessione. Riprova.');
+    } finally {
       setIsReformulating(false);
-    }, 1200);
+    }
   };
   const subtotale = items.reduce((sum, item) => sum + item.quantita * item.prezzo, 0);
 
