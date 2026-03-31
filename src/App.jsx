@@ -502,7 +502,7 @@ function VoiceRecorder({ onTranscriptComplete }) {
   );
 }
 
-function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF, onBack, transcript, discount, setDiscount, margin, setMargin, clients, scadenza, setScadenza, pagamento, setPagamento, photos, setPhotos, prices, descrizione, setDescrizione, firmaImpresa, setFirmaImpresa, luogoFirma, setLuogoFirma, isEditing, onSaveOnly, onNavigate }) {
+function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF, onBack, transcript, discount, setDiscount, margin, setMargin, clients, scadenza, setScadenza, pagamento, setPagamento, photos, setPhotos, prices, descrizione, setDescrizione, firmaImpresa, setFirmaImpresa, luogoFirma, setLuogoFirma, isEditing, onSaveOnly, onNavigate, isAIProcessing, isModifyRecording, modifyTranscript, startModifyRecording, stopModifyRecording }) {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showDBPicker, setShowDBPicker] = useState(false);
   const [dbSearch, setDbSearch] = useState("");
@@ -2361,6 +2361,11 @@ const startModifyRecording = () => {
           isEditing={isEditing}
           onSaveOnly={isEditing ? () => { handleGeneratePDF(); } : null}
           onNavigate={onNavigate}
+            isAIProcessing={isAIProcessing}
+            isModifyRecording={isModifyRecording}
+            modifyTranscript={modifyTranscript}
+            startModifyRecording={startModifyRecording}
+            stopModifyRecording={stopModifyRecording}
         />
       )}
 
