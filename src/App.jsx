@@ -183,7 +183,7 @@ function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus
         <button onClick={() => onNavigate("costifissi")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 transition">
           <Building2 size={22} className="text-orange-500 mb-2" />
           <p className="font-semibold text-gray-800 text-xs">Costi Fissi</p>
-          <p className="text-gray-400 text-xs mt-0.5">€ {stats.costoMensile?.toLocaleString("it-IT") || "0"}/mese</p>
+          <p className="text-gray-400 text-xs mt-0.5">€ {stats.costoMensile?.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0"}/mese</p>
         </button>
       </div>
 
@@ -999,7 +999,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
               </div>
               <span className="text-gray-300">=</span>
               <span className="font-semibold text-gray-800 text-sm ml-auto">
-                € {(item.quantita * item.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                € {(item.quantita * item.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           </div>
@@ -1038,7 +1038,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
               min="0"
             />
             <span className="text-blue-400 text-xs ml-auto whitespace-nowrap">
-              + € {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+              + € {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         )}
@@ -1078,7 +1078,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
             />
             {discount.valore > 0 && (
               <span className="text-green-600 text-xs font-medium whitespace-nowrap">
-                - € {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                - € {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             )}
           </div>
@@ -1089,35 +1089,35 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
       <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-200">
         <div className="flex justify-between text-sm text-gray-600">
           <span>Subtotale voci</span>
-          <span>€ {subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+          <span>€ {subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         {margin.enabled && importoMargine > 0 && (
           <div className="flex justify-between text-sm text-blue-600">
             <span>Margine {margin.tipo === "percentuale" ? `(${margin.valore}%)` : "fisso"}</span>
-            <span>+ € {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            <span>+ € {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {discount.enabled && importoSconto > 0 && (
           <div className="flex justify-between text-sm text-green-600">
             <span>Sconto {discount.tipo === "percentuale" ? `(${discount.valore}%)` : "fisso"}</span>
-            <span>- € {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            <span>- € {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {(margin.enabled || (discount.enabled && importoSconto > 0)) && (
           <div className="flex justify-between text-sm text-gray-600 border-t border-gray-200 pt-1">
             <span>Imponibile</span>
-            <span>€ {subtotaleScontato.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            <span>€ {subtotaleScontato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {ivaDettaglio.map((d, i) => (
           <div key={i} className="flex justify-between text-sm text-gray-600">
             <span>IVA {d.aliquota}%</span>
-            <span>€ {d.importo.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            <span>€ {d.importo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         ))}
         <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-gray-800">
           <span>TOTALE</span>
-          <span className="text-orange-600 text-lg">€ {totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+          <span className="text-orange-600 text-lg">€ {totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
       </div>
 
@@ -1137,11 +1137,11 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
             <div className="space-y-1 pt-1">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-700">Costo totale interno</span>
-                <span className="font-semibold">€ {costoTotaleInterno.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+                <span className="font-semibold">€ {costoTotaleInterno.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className={`flex justify-between text-sm font-bold border-t pt-1 ${isPositive ? "text-green-700" : "text-red-700"}`}>
                 <span>Margine reale</span>
-                <span>€ {margineReale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+                <span>€ {margineReale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className={`text-xs font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}>
                 Margine %: {marginePerc}%
@@ -1800,10 +1800,10 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit }) {
             <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
               <span>{item.quantita} {item.unita}</span>
               <span className="text-gray-300">×</span>
-              <span>€ {item.prezzo.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+              <span>€ {item.prezzo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               <span className="text-gray-300">=</span>
               <span className="font-semibold text-gray-800 ml-auto">
-                € {(item.quantita * item.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                € {(item.quantita * item.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           </div>
@@ -1813,35 +1813,35 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit }) {
       <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-200">
         <div className="flex justify-between text-sm text-gray-600">
           <span>Subtotale voci</span>
-          <span>€ {subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+          <span>€ {subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         {marginEnabled && importoMargine > 0 && (
           <div className="flex justify-between text-sm text-blue-600">
             <span>Margine {marginTipo === "percentuale" ? `(${marginPerc}%)` : "fisso"}</span>
-            <span>+ € {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            <span>+ € {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {discountValore > 0 && importoSconto > 0 && (
           <div className="flex justify-between text-sm text-green-600">
             <span>Sconto {discountTipo === "percentuale" ? `(${discountValore}%)` : "fisso"}</span>
-            <span>- € {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            <span>- € {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {(marginEnabled || (discountValore > 0 && importoSconto > 0)) && (
           <div className="flex justify-between text-sm text-gray-600 border-t border-gray-200 pt-1">
             <span>Imponibile</span>
-            <span>€ {subtotaleScontato.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            <span>€ {subtotaleScontato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {ivaDettaglio.map((d, i) => (
           <div key={i} className="flex justify-between text-sm text-gray-600">
             <span>IVA {d.aliquota}%</span>
-            <span>€ {d.importo.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            <span>€ {d.importo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         ))}
         <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-gray-800">
           <span>TOTALE</span>
-          <span className="text-orange-600 text-lg">€ {totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+          <span className="text-orange-600 text-lg">€ {totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
       </div>
 
@@ -1855,11 +1855,11 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit }) {
           <div className="space-y-1 pt-1">
             <div className="flex justify-between text-sm">
               <span className="text-gray-700">Costo totale interno</span>
-              <span className="font-semibold">€ {quote.costoTotaleInterno.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+              <span className="font-semibold">€ {quote.costoTotaleInterno.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className={`flex justify-between text-sm font-bold border-t pt-1 ${(subtotaleScontato - quote.costoTotaleInterno) >= 0 ? "text-green-700" : "text-red-700"}`}>
               <span>Margine reale</span>
-              <span>€ {(subtotaleScontato - quote.costoTotaleInterno).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+              <span>€ {(subtotaleScontato - quote.costoTotaleInterno).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className={`text-xs font-medium ${(subtotaleScontato - quote.costoTotaleInterno) >= 0 ? "text-green-600" : "text-red-600"}`}>
               Margine %: {subtotaleScontato > 0 ? ((subtotaleScontato - quote.costoTotaleInterno) / subtotaleScontato * 100).toFixed(1) : 0}%
@@ -1960,15 +1960,15 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
         <div className="grid grid-cols-2 gap-2">
           <div>
             <p className="text-green-700 text-xs">Mensile</p>
-            <p className="text-green-900 font-bold">€ {costoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</p>
+            <p className="text-green-900 font-bold">€ {costoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <div>
             <p className="text-green-700 text-xs">Annuale</p>
-            <p className="text-green-900 font-bold">€ {costoAnnuale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</p>
+            <p className="text-green-900 font-bold">€ {costoAnnuale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <div className="col-span-2">
             <p className="text-green-700 text-xs">Costo giornaliero (lavorativo)</p>
-            <p className="text-green-900 font-bold">€ {costoGiornaliero.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</p>
+            <p className="text-green-900 font-bold">€ {costoGiornaliero.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
         </div>
       </div>
@@ -2043,7 +2043,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
                   <div>
                     <p className="font-medium text-sm text-gray-800">{item.voce}</p>
                     <p className="text-xs text-gray-400">{item.categoria} · {item.note}</p>
-                <p className="text-xs text-gray-500 mt-1">€ {importoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2 })}/mese (€ {(item.frequenza === "annuale" ? item.importo : item.importo * 12).toLocaleString("it-IT", { minimumFractionDigits: 2 })}/anno)</p>
+                <p className="text-xs text-gray-500 mt-1">€ {importoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mese (€ {(item.frequenza === "annuale" ? item.importo : item.importo * 12).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/anno)</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => startEdit(item)} className="p-1 text-gray-400 hover:text-orange-500"><Edit3 size={14} /></button>
@@ -2119,7 +2119,7 @@ function StoricoView({ quotes, onViewQuote, onDeleteQuote }) {
                 <p className="text-gray-400 text-xs mt-1">{q.data}</p>
               </div>
             </div>
-            <span className="font-bold text-orange-600">€ {q.totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}</span>
+            <span className="font-bold text-orange-600">€ {q.totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className="flex items-center justify-between mt-2">
             <p className="text-gray-500 text-xs">{q.voci} voci · {q.descrizione?.substring(0, 50)}...</p>
