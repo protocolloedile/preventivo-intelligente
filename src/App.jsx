@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Mic, MicOff, FileText, Database, Plus, Trash2, Edit3, Check, X, Download, Volume2, ChevronRight, ChevronUp, ChevronDown, Home, ArrowLeft, Search, Save, RefreshCw, Eye, Printer, Users, UserPlus, Phone, Camera, Image, Send, Mail, MessageCircle, GripVertical, Settings, Upload, Building2, LogOut, User, TrendingUp } from "lucide-react";
+import { Mic, MicOff, FileText, Database, Plus, Trash2, Edit3, Check, X, Download, Volume2, ChevronRight, ChevronUp, ChevronDown, Home, ArrowLeft, Search, Save, RefreshCw, Eye, Printer, Users, UserPlus, Phone, Camera, Image, Send, Mail, MessageCircle, GripVertical, Settings, Upload, Building2, LogOut, User, TrendingUp , Copy} from "lucide-react";
 import { supabase } from "./supabaseClient";
 
 // ========== DATABASE PREZZI DEFAULT ==========
@@ -76,14 +76,14 @@ const DEFAULT_COSTI_FISSI = [
 ];
 
 // ========== AI SIMULATION ==========
-async function parseVoiceToQuote(transcript, priceDB) {
+async function parseVoiceToQuote(transcript, priceDB, pastQuotes) {
   if (!transcript || !transcript.trim() || !priceDB || !priceDB.length) return null;
   
   try {
     const response = await fetch('/api/parseQuote', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transcript: transcript.trim(), priceDB })
+      body: JSON.stringify({ transcript: transcript.trim(), priceDB, pastQuotes: pastQuotes || [] })
     });
     const data = await response.json();
     if (data.items && data.items.length > 0) {
@@ -1730,7 +1730,7 @@ function ShareButton({ quote, onDownloadPDF, onGeneratePDFBlob }) {
   );
 }
 
-function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit }) {
+function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit, onDuplicate }) {
   const subtotale = quote.subtotale || quote.items?.reduce((sum, item) => sum + item.quantita * item.prezzo, 0) || 0;
   const importoMargine = quote.importoMargine || 0;
   const importoSconto = quote.importoSconto || 0;
@@ -1887,6 +1887,16 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit }) {
       )}
 
       <ShareButton quote={quote} onDownloadPDF={onDownloadPDF} />
+
+          {onDuplicate && (
+            <button
+              onClick={() => onDuplicate(quote)}
+              className="w-full bg-purple-500 text-white py-3 rounded-xl font-semibold hover:bg-purple-600 transition flex items-center justify-center gap-2"
+            >
+              <Copy size={18} />
+              Duplica preventivo
+            </button>
+          )}
 
       <p className="text-center text-xs text-gray-400">
         Preventivo valido 30 giorni dalla data di emissione
@@ -2263,7 +2273,7 @@ const startModifyRecording = () => {
     }, 110);
 
     try {
-      const result = await parseVoiceToQuote(text, prices);
+        const result = await parseVoiceToQuote(text, prices, quotes);
       // Complete the progress bar
       clearInterval(loadingIntervalRef.current);
       setLoadingProgress(100);
@@ -2853,6 +2863,28 @@ export default function App({ session }) {
     }
   };
 
+  const handleDuplicateQuote = (quote) => {
+    // Create a duplicate with fresh data - remove IDs, reset client info, update date
+    const duplicatedItems = (quote.items || []).filter(i => !i._meta).map(item => ({
+      ...item,
+      totale: item.quantita * item.prezzo
+    }));
+    
+    setItems(duplicatedItems);
+    setDescrizione(quote.descrizione || "");
+    setTranscript(quote.descrizione || "");
+    setClientInfo({ nome: "", indirizzo: "", telefono: "", email: "", codiceFiscale: "" });
+    setDiscount({ enabled: false, tipo: "percentuale", valore: 0 });
+    if (quote.margin) {
+      setMargin(quote.margin);
+    }
+    if (quote.paymentTerms) {
+      setPaymentTerms(quote.paymentTerms);
+    }
+    setStep("edit");
+    setCurrentView("preventivo");
+  };
+
   const costoMensile = costiFissi.reduce((sum, item) => {
     return sum + (item.frequenza === "annuale" ? item.importo / 12 : item.importo);
   }, 0);
@@ -2917,8 +2949,9 @@ export default function App({ session }) {
             quote={selectedQuote}
             onBack={() => setCurrentView("storico")}
             onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)}
-            onEdit={handleEditQuote}
-          />
+              onEdit={handleEditQuote}
+              onDuplicate={handleDuplicateQuote}
+            />
         )}
 
         {currentView !== "home" && (
