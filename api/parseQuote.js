@@ -6,12 +6,26 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { transcript, priceDB } = req.body;
+  const { transcript, priceDB, pastQuotes } = req.body;
   if (!transcript || !priceDB || !priceDB.length) {
     return res.status(400).json({ error: 'Dati mancanti' });
   }
 
   const vociDisponibili = priceDB.map(p => p.voce + ' (' + p.unita + ')').join(', ');
+
+  // Build past quotes context for AI learning
+  let pastQuotesContext = '';
+  if (pastQuotes && pastQuotes.length > 0) {
+    const examples = pastQuotes.slice(0, 5).map((q, i) => {
+      const itemsList = (q.items || [])
+        .filter(item => !item._meta)
+        .map(item => '  - ' + item.voce + ' (qta: ' + item.quantita + ', unita: ' + item.unita + ')')
+        .join('\n');
+      return 'Preventivo ' + (i + 1) + ':\nDescrizione: "' + (q.descrizione || '').substring(0, 200) + '"\nVoci selezionate:\n' + itemsList;
+    }).join('\n\n');
+    
+    pastQuotesContext = '\n\nECCO ALCUNI PREVENTIVI GIA\' COMPLETATI DA QUESTO UTENTE. Usa questi come riferimento per capire il suo stile, quali voci seleziona tipicamente e come stima le quantita\'. Cerca di essere coerente con le sue scelte precedenti:\n\n' + examples + '\n\n';
+  }
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -25,11 +39,11 @@ export default async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: 'Sei un esperto di edilizia e ristrutturazioni in Italia. Il tuo compito è analizzare la descrizione vocale di un lavoro edile e selezionare le voci di costo appropriate dal database prezzi del cliente. Rispondi SOLO con un JSON array. Ogni elemento deve avere: "voce" (il nome ESATTO e IDENTICO copiato dal database, senza modifiche), "quantita" (numero stimato in base alla descrizione). Se la descrizione menziona metrature, usale per calcolare le quantità. Se non sono specificate, usa stime ragionevoli per un intervento standard. Seleziona SOLO voci che esistono nel database fornito. Non inventare voci nuove. IMPORTANTE: il campo "voce" deve essere copiato ESATTAMENTE come appare nel database, carattere per carattere.'
+            content: 'Sei un esperto di edilizia e ristrutturazioni in Italia. Il tuo compito e\' analizzare la descrizione vocale di un lavoro edile e selezionare le voci di costo appropriate dal database prezzi del cliente. Rispondi SOLO con un JSON array. Ogni elemento deve avere: "voce" (il nome ESATTO e IDENTICO copiato dal database, senza modifiche), "quantita" (numero stimato in base alla descrizione).' + pastQuotesContext
           },
           {
             role: 'user',
-            content: 'Descrizione lavoro: "' + transcript + '"\n\nVoci disponibili nel database: ' + vociDisponibili + '\n\nSeleziona le voci appropriate e stima le quantità. Rispondi SOLO con il JSON array, senza altro testo.'
+            content: 'Descrizione lavoro: "' + transcript + '"\n\nVoci disponibili nel database: ' + vociDisponibili + '\n\nSeleziona le voci appropriate e stima le quantita\' . Rispondi SOLO con il JSON array, senza altro testo.'
           }
         ],
         temperature: 0.3,
@@ -41,8 +55,8 @@ export default async function handler(req, res) {
     if (!response.ok) throw new Error(data.error?.message || 'Errore API OpenAI');
 
     let resultText = data.choices[0].message.content.trim();
-    if (resultText.startsWith('```')) {
-      resultText = resultText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    if (resultText.startsWith('\`\`\`')) {
+      resultText = resultText.replace(/^\`\`\`(?:json)?\n?/, '').replace(/\n?\`\`\`$/, '');
     }
 
     const selectedItems = JSON.parse(resultText);
