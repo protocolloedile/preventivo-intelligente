@@ -2157,6 +2157,8 @@ function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadP
   const [clientInfo, setClientInfo] = useState(isEditing ? (initialData.clientInfo || { nome: "", indirizzo: "", telefono: "" }) : { nome: "", indirizzo: "", telefono: "" });
   const [error, setError] = useState("");
   const [isAIProcessing, setIsAIProcessing] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const loadingIntervalRef = useRef(null);
   const [isModifyRecording, setIsModifyRecording] = useState(false);
   const [modifyTranscript, setModifyTranscript] = useState("");
   const modifyRecognitionRef = useRef(null);
@@ -2247,20 +2249,43 @@ const startModifyRecording = () => {
     setDescrizione(text);
     setError("");
     setIsAIProcessing(true);
+    setLoadingProgress(0);
+    setStep("loading");
+
+    // Start progress animation (reaches ~90% in 10 seconds)
+    let progress = 0;
+    if (loadingIntervalRef.current) clearInterval(loadingIntervalRef.current);
+    loadingIntervalRef.current = setInterval(() => {
+      progress += 1;
+      if (progress <= 90) {
+        setLoadingProgress(progress);
+      }
+    }, 110);
+
     try {
       const result = await parseVoiceToQuote(text, prices);
+      // Complete the progress bar
+      clearInterval(loadingIntervalRef.current);
+      setLoadingProgress(100);
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       if (result) {
         setItems(result);
         setStep("edit");
         setError("");
       } else {
+        setStep("voice");
         setError("L'AI non ha trovato materiali corrispondenti. Prova ad essere piu' specifico (es: 'ristrutturazione bagno 15mq', 'impianto elettrico appartamento 80mq').");
       }
     } catch (err) {
       console.error('Errore:', err);
+      clearInterval(loadingIntervalRef.current);
+      setStep("voice");
       setError("Errore nella selezione dei materiali. Riprova.");
     } finally {
       setIsAIProcessing(false);
+      setLoadingProgress(0);
     }
   };
 
@@ -2331,6 +2356,61 @@ const startModifyRecording = () => {
         </div>
       )}
 
+
+          {step === "loading" && (
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "400px",
+              gap: "24px",
+              padding: "40px 20px"
+            }}>
+              <div style={{
+                width: "80px",
+                height: "80px",
+                border: "4px solid #e5e7eb",
+                borderTop: "4px solid #f59e0b",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite"
+              }} />
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              <h3 style={{ color: "#1f2937", fontSize: "20px", fontWeight: "600", margin: 0 }}>
+                L'AI sta generando il preventivo...
+              </h3>
+              <div style={{ width: "100%", maxWidth: "400px" }}>
+                <div style={{
+                  width: "100%",
+                  height: "12px",
+                  backgroundColor: "#e5e7eb",
+                  borderRadius: "6px",
+                  overflow: "hidden"
+                }}>
+                  <div style={{
+                    width: loadingProgress + "%",
+                    height: "100%",
+                    backgroundColor: "#f59e0b",
+                    borderRadius: "6px",
+                    transition: "width 0.3s ease"
+                  }} />
+                </div>
+                <p style={{
+                  textAlign: "center",
+                  marginTop: "12px",
+                  color: "#6b7280",
+                  fontSize: "14px"
+                }}>
+                  {loadingProgress < 100
+                    ? "Analisi in corso... " + Math.round(loadingProgress) + "%"
+                    : "Completato! Preparazione preventivo..."}
+                </p>
+              </div>
+              <p style={{ color: "#9ca3af", fontSize: "13px", maxWidth: "350px", textAlign: "center" }}>
+                Stiamo analizzando la tua descrizione e selezionando i materiali piu' adatti dal nostro listino.
+              </p>
+            </div>
+          )}
       {step === "edit" && (
         <QuoteEditor
           items={items}
