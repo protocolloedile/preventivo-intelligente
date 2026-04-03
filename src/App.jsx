@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Mic, MicOff, FileText, Database, Plus, Trash2, Edit3, Check, X, Download, Volume2, ChevronRight, ChevronUp, ChevronDown, Home, ArrowLeft, Search, Save, RefreshCw, Eye, Printer, Users, UserPlus, Phone, Camera, Image, Send, Mail, MessageCircle, GripVertical, Settings, Upload, Building2, LogOut, User, TrendingUp , Copy} from "lucide-react";
+import { Mic, MicOff, FileText, Database, Plus, Trash2, Edit3, Check, X, Download, Volume2, ChevronRight, ChevronUp, ChevronDown, Home, ArrowLeft, Search, Save, RefreshCw, Eye, Printer, Users, UserPlus, Phone, Camera, Image, Send, Mail, MessageCircle, GripVertical, Settings, Upload, Building2, LogOut, User, TrendingUp, Copy } from "lucide-react";
 import { supabase } from "./supabaseClient";
 
 // ========== DATABASE PREZZI DEFAULT ==========
@@ -30,10 +30,10 @@ const DEFAULT_PRICES = [
   { id: 20, categoria: "Idraulica", voce: "Installazione lavabo", unita: "cad", costoInterno: 90, prezzo: 150, note: "Escluso lavabo", iva: 22 },
   { id: 21, categoria: "Idraulica", voce: "Installazione caldaia", unita: "cad", costoInterno: 270, prezzo: 450, note: "A condensazione", iva: 22 },
   // Impianto Elettrico
-  { id: 22, categoria: "ElettricitÃ ", voce: "Punto luce", unita: "cad", costoInterno: 39, prezzo: 65, note: "Incluso cablaggio", iva: 22 },
-  { id: 23, categoria: "ElettricitÃ ", voce: "Punto presa", unita: "cad", costoInterno: 33, prezzo: 55, note: "Schuko o bipasso", iva: 22 },
-  { id: 24, categoria: "ElettricitÃ ", voce: "Quadro elettrico", unita: "cad", costoInterno: 228, prezzo: 380, note: "Fino a 12 moduli", iva: 22 },
-  { id: 25, categoria: "ElettricitÃ ", voce: "Impianto elettrico completo", unita: "mq", costoInterno: 27, prezzo: 45, note: "A norma CEI", iva: 22 },
+  { id: 22, categoria: "Elettricità", voce: "Punto luce", unita: "cad", costoInterno: 39, prezzo: 65, note: "Incluso cablaggio", iva: 22 },
+  { id: 23, categoria: "Elettricità", voce: "Punto presa", unita: "cad", costoInterno: 33, prezzo: 55, note: "Schuko o bipasso", iva: 22 },
+  { id: 24, categoria: "Elettricità", voce: "Quadro elettrico", unita: "cad", costoInterno: 228, prezzo: 380, note: "Fino a 12 moduli", iva: 22 },
+  { id: 25, categoria: "Elettricità", voce: "Impianto elettrico completo", unita: "mq", costoInterno: 27, prezzo: 45, note: "A norma CEI", iva: 22 },
   // Pittura
   { id: 26, categoria: "Pittura", voce: "Tinteggiatura pareti", unita: "mq", costoInterno: 5, prezzo: 8, note: "Due mani", iva: 22 },
   { id: 27, categoria: "Pittura", voce: "Tinteggiatura soffitto", unita: "mq", costoInterno: 6, prezzo: 10, note: "Due mani", iva: 22 },
@@ -141,7 +141,7 @@ function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus
   return (
     <div className="p-5 space-y-5">
       <div className="text-center py-4">
-        <h2 className="text-2xl font-bold text-gray-800">{nomeUtente ? `Ciao ${nomeUtente}! ð` : "Ciao! ð"}</h2>
+        <h2 className="text-2xl font-bold text-gray-800">{nomeUtente ? `Ciao ${nomeUtente}! 👋` : "Ciao! 👋"}</h2>
         <p className="text-gray-500 mt-1">Cosa vuoi fare oggi?</p>
       </div>
 
@@ -183,12 +183,12 @@ function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus
         <button onClick={() => onNavigate("costifissi")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 transition">
           <Building2 size={22} className="text-orange-500 mb-2" />
           <p className="font-semibold text-gray-800 text-xs">Costi Fissi</p>
-          <p className="text-gray-400 text-xs mt-0.5">â¬ {stats.costoMensile?.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0"}/mese</p>
+          <p className="text-gray-400 text-xs mt-0.5">€ {stats.costoMensile?.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0"}/mese</p>
         </button>
       </div>
 
       <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4">
-        <p className="text-orange-800 font-semibold text-sm">ð¡ Come funziona</p>
+        <p className="text-orange-800 font-semibold text-sm">💡 Come funziona</p>
         <ol className="text-orange-700 text-xs mt-2 space-y-1">
           <li>1. Premi il microfono e descrivi il lavoro</li>
           <li>2. L'AI analizza e genera il preventivo</li>
@@ -198,8 +198,8 @@ function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus
     
       {subscriptionStatus === "trialing" && trialEnd && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center space-y-2">
-          <p className="text-sm text-gray-600">Il tuo abbonamento gratuito scadrÃ  il <span className="font-bold text-orange-600">{new Date(trialEnd).toLocaleDateString("it-IT")}</span></p>
-          <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Abbonati ora a â¬47/mese â</button>
+          <p className="text-sm text-gray-600">Il tuo abbonamento gratuito scadrà il <span className="font-bold text-orange-600">{new Date(trialEnd).toLocaleDateString("it-IT")}</span></p>
+          <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Abbonati ora a €47/mese →</button>
         </div>
       )}
 </div>
@@ -295,7 +295,7 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         </div>
-        <p className="text-xs text-gray-400 mt-2">Formati: JPG, PNG. Max 2MB. ApparirÃ  nell'intestazione del PDF.</p>
+        <p className="text-xs text-gray-400 mt-2">Formati: JPG, PNG. Max 2MB. Apparirà nell'intestazione del PDF.</p>
       </div>
 
       {/* Dati personali */}
@@ -460,7 +460,7 @@ function VoiceRecorder({ onTranscriptComplete }) {
               {isRecording ? <MicOff size={36} /> : <Mic size={36} />}
             </button>
             <p className="mt-3 text-sm text-gray-500">
-              {isRecording ? "ð´ Sto ascoltando... Parla!" : "Premi per registrare"}
+              {isRecording ? "🔴 Sto ascoltando... Parla!" : "Premi per registrare"}
             </p>
           </div>
 
@@ -519,7 +519,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
     if (!items || items.length === 0) errors.push("Almeno una voce di preventivo");
     if (!scadenza) errors.push("Data di scadenza");
     const totPerc = pagamento.reduce((s, f) => s + f.percentuale, 0);
-    if (totPerc !== 100) errors.push("ModalitÃ  di pagamento (totale deve essere 100%)");
+    if (totPerc !== 100) errors.push("Modalità di pagamento (totale deve essere 100%)");
 
     if (errors.length > 0) {
       setValidationError("Campi obbligatori mancanti: " + errors.join(", "));
@@ -590,7 +590,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
   };
   const subtotale = items.reduce((sum, item) => sum + item.quantita * item.prezzo, 0);
 
-  // Calcolo margine (ricarico % o fisso sul subtotale â visibile solo all'impresario)
+  // Calcolo margine (ricarico % o fisso sul subtotale — visibile solo all'impresario)
   const importoMargine = margin.enabled
     ? (margin.tipo === "percentuale"
       ? subtotale * (margin.valore / 100)
@@ -690,7 +690,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
         <textarea
           value={descrizione || ""}
           onChange={(e) => setDescrizione(e.target.value)}
-          placeholder="Descrivi i lavori da eseguire... Puoi scrivere o usare il pulsante ð¤ Dettatura per dettare a voce"
+          placeholder="Descrivi i lavori da eseguire... Puoi scrivere o usare il pulsante 🎤 Dettatura per dettare a voce"
           className={`w-full p-3 border rounded-lg text-sm focus:border-orange-400 focus:outline-none resize-none ${isDictating ? "border-red-300 bg-white" : "border-gray-200"}`}
           rows={4}
         />
@@ -722,17 +722,17 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
 
       {/* SCADENZA PREVENTIVO */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
-        <p className="text-xs text-gray-400 font-medium">VALIDITÃ PREVENTIVO</p>
+        <p className="text-xs text-gray-400 font-medium">VALIDITÀ PREVENTIVO</p>
         <div className="flex items-center gap-2">
           <input type="date" value={scadenza} onChange={(e) => setScadenza(e.target.value)} className="flex-1 p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
           <span className="text-xs text-gray-400">Scade il</span>
         </div>
       </div>
 
-      {/* MODALITÃ DI PAGAMENTO */}
+      {/* MODALITÀ DI PAGAMENTO */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400 font-medium">MODALITÃ DI PAGAMENTO</p>
+          <p className="text-xs text-gray-400 font-medium">MODALITÀ DI PAGAMENTO</p>
           <button
             onClick={() => setPagamento([...pagamento, { fase: "Nuova fase", percentuale: 0 }])}
             className="text-orange-500 text-xs font-medium flex items-center gap-1 hover:text-orange-600"
@@ -803,10 +803,10 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
           const totPerc = pagamento.reduce((s, f) => s + f.percentuale, 0);
           return totPerc !== 100 ? (
             <p className={`text-xs font-medium ${totPerc > 100 ? "text-red-500" : "text-amber-500"}`}>
-              Totale: {totPerc}% â {totPerc > 100 ? "supera il 100%!" : `manca il ${100 - totPerc}%`}
+              Totale: {totPerc}% — {totPerc > 100 ? "supera il 100%!" : `manca il ${100 - totPerc}%`}
             </p>
           ) : (
-            <p className="text-xs text-green-600 font-medium">Totale: 100% â</p>
+            <p className="text-xs text-green-600 font-medium">Totale: 100% ✓</p>
           );
         })()}
       </div>
@@ -913,9 +913,9 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                   >
                     <div>
                       <p className="text-sm font-medium text-gray-800">{p.voce}</p>
-                      <p className="text-[10px] text-gray-400">{p.categoria} Â· {p.unita} Â· IVA {p.iva || 22}%</p>
+                      <p className="text-[10px] text-gray-400">{p.categoria} · {p.unita} · IVA {p.iva || 22}%</p>
                     </div>
-                    <span className="text-xs font-semibold text-orange-600">â¬ {p.prezzo}</span>
+                    <span className="text-xs font-semibold text-orange-600">€ {p.prezzo}</span>
                   </button>
                 ))
               }
@@ -987,9 +987,9 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                 />
                 <span className="text-gray-400 text-xs">{item.unita}</span>
               </div>
-              <span className="text-gray-300">Ã</span>
+              <span className="text-gray-300">×</span>
               <div className="flex items-center gap-1">
-                <span className="text-gray-400 text-xs">â¬</span>
+                <span className="text-gray-400 text-xs">€</span>
                 <input
                   type="number"
                   value={item.prezzo}
@@ -999,7 +999,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
               </div>
               <span className="text-gray-300">=</span>
               <span className="font-semibold text-gray-800 text-sm ml-auto">
-                â¬ {(item.quantita * item.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                € {(item.quantita * item.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           </div>
@@ -1010,7 +1010,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-blue-800">ð Ricarico ulteriore da inserire</p>
+            <p className="text-sm font-semibold text-blue-800">📊 Ricarico ulteriore da inserire</p>
             <p className="text-xs text-blue-500">Ricarico % o a corpo sul costo base (non visibile al cliente)</p>
           </div>
           <button
@@ -1028,7 +1028,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
               className="p-2 border border-blue-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none bg-white"
             >
               <option value="percentuale">%</option>
-              <option value="fisso">â¬ fisso</option>
+              <option value="fisso">€ fisso</option>
             </select>
             <input
               type="number"
@@ -1038,7 +1038,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
               min="0"
             />
             <span className="text-blue-400 text-xs ml-auto whitespace-nowrap">
-              + â¬ {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              + € {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         )}
@@ -1048,7 +1048,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
       <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-green-800">ð·ï¸ Sconto</p>
+            <p className="text-sm font-semibold text-green-800">🏷️ Sconto</p>
             <p className="text-xs text-green-500">Sconto % o a corpo sul totale</p>
           </div>
           <button
@@ -1066,7 +1066,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
               className="p-2 border border-green-200 rounded-lg text-sm focus:outline-none bg-white"
             >
               <option value="percentuale">%</option>
-              <option value="fisso">â¬ fisso</option>
+              <option value="fisso">€ fisso</option>
             </select>
             <input
               type="number"
@@ -1078,7 +1078,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
             />
             {discount.valore > 0 && (
               <span className="text-green-600 text-xs font-medium whitespace-nowrap">
-                - â¬ {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                - € {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             )}
           </div>
@@ -1089,35 +1089,35 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
       <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-200">
         <div className="flex justify-between text-sm text-gray-600">
           <span>Subtotale voci</span>
-          <span>â¬ {subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span>€ {subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         {margin.enabled && importoMargine > 0 && (
           <div className="flex justify-between text-sm text-blue-600">
             <span>Margine {margin.tipo === "percentuale" ? `(${margin.valore}%)` : "fisso"}</span>
-            <span>+ â¬ {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>+ € {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {discount.enabled && importoSconto > 0 && (
           <div className="flex justify-between text-sm text-green-600">
             <span>Sconto {discount.tipo === "percentuale" ? `(${discount.valore}%)` : "fisso"}</span>
-            <span>- â¬ {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>- € {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {(margin.enabled || (discount.enabled && importoSconto > 0)) && (
           <div className="flex justify-between text-sm text-gray-600 border-t border-gray-200 pt-1">
             <span>Imponibile</span>
-            <span>â¬ {subtotaleScontato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>€ {subtotaleScontato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {ivaDettaglio.map((d, i) => (
           <div key={i} className="flex justify-between text-sm text-gray-600">
             <span>IVA {d.aliquota}%</span>
-            <span>â¬ {d.importo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>€ {d.importo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         ))}
         <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-gray-800">
           <span>TOTALE</span>
-          <span className="text-orange-600 text-lg">â¬ {totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span className="text-orange-600 text-lg">€ {totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
       </div>
 
@@ -1137,11 +1137,11 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
             <div className="space-y-1 pt-1">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-700">Costo totale interno</span>
-                <span className="font-semibold">â¬ {costoTotaleInterno.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-semibold">€ {costoTotaleInterno.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className={`flex justify-between text-sm font-bold border-t pt-1 ${isPositive ? "text-green-700" : "text-red-700"}`}>
                 <span>Margine reale</span>
-                <span>â¬ {margineReale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span>€ {margineReale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className={`text-xs font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}>
                 Margine %: {marginePerc}%
@@ -1372,8 +1372,8 @@ function PriceDatabase({ prices, setPrices }) {
               <option value="kg">kg</option>
               <option value="ora">ora</option>
             </select>
-            <input type="number" value={newItem.costoInterno} onChange={(e) => setNewItem({...newItem, costoInterno: e.target.value})} placeholder="Costo â¬" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
-            <input type="number" value={newItem.prezzo} onChange={(e) => setNewItem({...newItem, prezzo: e.target.value})} placeholder="Prezzo â¬" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+            <input type="number" value={newItem.costoInterno} onChange={(e) => setNewItem({...newItem, costoInterno: e.target.value})} placeholder="Costo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+            <input type="number" value={newItem.prezzo} onChange={(e) => setNewItem({...newItem, prezzo: e.target.value})} placeholder="Prezzo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
           </div>
           <input value={newItem.note} onChange={(e) => setNewItem({...newItem, note: e.target.value})} placeholder="Note (opzionale)" className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
           <div className="flex items-center gap-2">
@@ -1417,9 +1417,9 @@ function PriceDatabase({ prices, setPrices }) {
               <div className="space-y-2">
                   <p className="font-medium text-sm text-gray-800">{item.voce}</p>
                 <div className="flex gap-2 items-center">
-                  <span className="text-xs text-gray-400">Costo â¬</span>
+                  <span className="text-xs text-gray-400">Costo €</span>
                   <input type="number" value={editValues.costoInterno} onChange={(e) => setEditValues({...editValues, costoInterno: parseFloat(e.target.value)})} className="w-20 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
-                  <span className="text-xs text-gray-400">â Prezzo â¬</span>
+                  <span className="text-xs text-gray-400">→ Prezzo €</span>
                   <input type="number" value={editValues.prezzo} onChange={(e) => setEditValues({...editValues, prezzo: parseFloat(e.target.value)})} className="w-20 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
                   <span className="text-xs text-gray-400">/{item.unita}</span>
                   <div className="ml-auto flex gap-1">
@@ -1438,8 +1438,8 @@ function PriceDatabase({ prices, setPrices }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-sm text-gray-800">{item.voce}</p>
-                  <p className="text-xs text-gray-400">{item.categoria} Â· {item.note} Â· <span className="text-orange-500">IVA {item.iva || 22}%</span></p>
-                  <p className="text-xs text-gray-500 mt-1">Costo: â¬{item.costoInterno} â Vendita: â¬{item.prezzo} Â· Margine: {item.prezzo > 0 ? ((item.prezzo-item.costoInterno)/item.prezzo*100).toFixed(0) : 0}%</p>
+                  <p className="text-xs text-gray-400">{item.categoria} · {item.note} · <span className="text-orange-500">IVA {item.iva || 22}%</span></p>
+                  <p className="text-xs text-gray-500 mt-1">Costo: €{item.costoInterno} → Vendita: €{item.prezzo} · Margine: {item.prezzo > 0 ? ((item.prezzo-item.costoInterno)/item.prezzo*100).toFixed(0) : 0}%</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => startEdit(item)} className="p-1 text-gray-400 hover:text-orange-500"><Edit3 size={14} /></button>
@@ -1605,7 +1605,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <div className="text-4xl mb-2">ðï¸</div>
+          <div className="text-4xl mb-2">🏗️</div>
           <h1 className="text-3xl font-bold text-gray-800">Preventivo Intelligente</h1>
           <p className="text-gray-500 mt-2">Scegli il tuo piano per iniziare</p>
           {userEmail && <p className="text-xs text-gray-400 mt-1">{userEmail}</p>}
@@ -1614,7 +1614,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
           <div className="bg-orange-500 text-white text-center py-3 font-bold text-lg">Piano Pro</div>
           <div className="p-6">
             <div className="text-center mb-6">
-              <span className="text-5xl font-bold text-gray-800">â¬47</span>
+              <span className="text-5xl font-bold text-gray-800">€47</span>
               <span className="text-gray-500">/mese</span>
             </div>
             <ul className="space-y-3 mb-6">
@@ -1799,11 +1799,11 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit, onDuplicate }) 
             </div>
             <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
               <span>{item.quantita} {item.unita}</span>
-              <span className="text-gray-300">Ã</span>
-              <span>â¬ {item.prezzo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-gray-300">×</span>
+              <span>€ {item.prezzo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               <span className="text-gray-300">=</span>
               <span className="font-semibold text-gray-800 ml-auto">
-                â¬ {(item.quantita * item.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                € {(item.quantita * item.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           </div>
@@ -1813,35 +1813,35 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit, onDuplicate }) 
       <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-200">
         <div className="flex justify-between text-sm text-gray-600">
           <span>Subtotale voci</span>
-          <span>â¬ {subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span>€ {subtotale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         {marginEnabled && importoMargine > 0 && (
           <div className="flex justify-between text-sm text-blue-600">
             <span>Margine {marginTipo === "percentuale" ? `(${marginPerc}%)` : "fisso"}</span>
-            <span>+ â¬ {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>+ € {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {discountValore > 0 && importoSconto > 0 && (
           <div className="flex justify-between text-sm text-green-600">
             <span>Sconto {discountTipo === "percentuale" ? `(${discountValore}%)` : "fisso"}</span>
-            <span>- â¬ {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>- € {importoSconto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {(marginEnabled || (discountValore > 0 && importoSconto > 0)) && (
           <div className="flex justify-between text-sm text-gray-600 border-t border-gray-200 pt-1">
             <span>Imponibile</span>
-            <span>â¬ {subtotaleScontato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>€ {subtotaleScontato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {ivaDettaglio.map((d, i) => (
           <div key={i} className="flex justify-between text-sm text-gray-600">
             <span>IVA {d.aliquota}%</span>
-            <span>â¬ {d.importo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>€ {d.importo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         ))}
         <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-gray-800">
           <span>TOTALE</span>
-          <span className="text-orange-600 text-lg">â¬ {totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span className="text-orange-600 text-lg">€ {totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
       </div>
 
@@ -1855,11 +1855,11 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit, onDuplicate }) 
           <div className="space-y-1 pt-1">
             <div className="flex justify-between text-sm">
               <span className="text-gray-700">Costo totale interno</span>
-              <span className="font-semibold">â¬ {quote.costoTotaleInterno.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="font-semibold">€ {quote.costoTotaleInterno.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className={`flex justify-between text-sm font-bold border-t pt-1 ${(subtotaleScontato - quote.costoTotaleInterno) >= 0 ? "text-green-700" : "text-red-700"}`}>
               <span>Margine reale</span>
-              <span>â¬ {(subtotaleScontato - quote.costoTotaleInterno).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span>€ {(subtotaleScontato - quote.costoTotaleInterno).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className={`text-xs font-medium ${(subtotaleScontato - quote.costoTotaleInterno) >= 0 ? "text-green-600" : "text-red-600"}`}>
               Margine %: {subtotaleScontato > 0 ? ((subtotaleScontato - quote.costoTotaleInterno) / subtotaleScontato * 100).toFixed(1) : 0}%
@@ -1886,17 +1886,17 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit, onDuplicate }) 
         </button>
       )}
 
-      <ShareButton quote={quote} onDownloadPDF={onDownloadPDF} />
+      {onDuplicate && (
+        <button
+          onClick={() => onDuplicate(quote)}
+          className="w-full bg-purple-500 text-white py-3 rounded-xl font-semibold hover:bg-purple-600 transition flex items-center justify-center gap-2"
+        >
+          <Copy size={18} />
+          Duplica preventivo
+        </button>
+      )}
 
-          {onDuplicate && (
-            <button
-              onClick={() => onDuplicate(quote)}
-              className="w-full bg-purple-500 text-white py-3 rounded-xl font-semibold hover:bg-purple-600 transition flex items-center justify-center gap-2"
-            >
-              <Copy size={18} />
-              Duplica preventivo
-            </button>
-          )}
+      <ShareButton quote={quote} onDownloadPDF={onDownloadPDF} />
 
       <p className="text-center text-xs text-gray-400">
         Preventivo valido 30 giorni dalla data di emissione
@@ -1970,15 +1970,15 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
         <div className="grid grid-cols-2 gap-2">
           <div>
             <p className="text-green-700 text-xs">Mensile</p>
-            <p className="text-green-900 font-bold">â¬ {costoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <p className="text-green-900 font-bold">€ {costoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <div>
             <p className="text-green-700 text-xs">Annuale</p>
-            <p className="text-green-900 font-bold">â¬ {costoAnnuale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <p className="text-green-900 font-bold">€ {costoAnnuale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <div className="col-span-2">
             <p className="text-green-700 text-xs">Costo giornaliero (lavorativo)</p>
-            <p className="text-green-900 font-bold">â¬ {costoGiornaliero.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <p className="text-green-900 font-bold">€ {costoGiornaliero.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
         </div>
       </div>
@@ -1996,7 +1996,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
           )}
           <input value={newItem.voce} onChange={(e) => setNewItem({...newItem, voce: e.target.value})} placeholder="Nome voce" className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
           <div className="flex gap-2">
-            <input type="number" value={newItem.importo} onChange={(e) => setNewItem({...newItem, importo: e.target.value})} placeholder="Importo â¬" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+            <input type="number" value={newItem.importo} onChange={(e) => setNewItem({...newItem, importo: e.target.value})} placeholder="Importo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
             <select value={newItem.frequenza} onChange={(e) => setNewItem({...newItem, frequenza: e.target.value})} className="p-2 border border-orange-200 rounded-lg text-sm focus:outline-none">
               <option value="mensile">Mensile</option>
               <option value="annuale">Annuale</option>
@@ -2036,7 +2036,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
                 <div className="space-y-2">
                   <p className="font-medium text-sm text-gray-800">{item.voce}</p>
                   <div className="flex gap-2 items-center">
-                    <span className="text-xs text-gray-400">â¬</span>
+                    <span className="text-xs text-gray-400">€</span>
                     <input type="number" value={editValues.importo} onChange={(e) => setEditValues({...editValues, importo: parseFloat(e.target.value)})} className="w-24 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
                     <select value={editValues.frequenza} onChange={(e) => setEditValues({...editValues, frequenza: e.target.value})} className="p-1 border border-orange-300 rounded text-sm focus:outline-none">
                       <option value="mensile">Mensile</option>
@@ -2052,8 +2052,8 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-sm text-gray-800">{item.voce}</p>
-                    <p className="text-xs text-gray-400">{item.categoria} Â· {item.note}</p>
-                <p className="text-xs text-gray-500 mt-1">â¬ {importoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mese (â¬ {(item.frequenza === "annuale" ? item.importo : item.importo * 12).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/anno)</p>
+                    <p className="text-xs text-gray-400">{item.categoria} · {item.note}</p>
+                <p className="text-xs text-gray-500 mt-1">€ {importoMensile.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mese (€ {(item.frequenza === "annuale" ? item.importo : item.importo * 12).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/anno)</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => startEdit(item)} className="p-1 text-gray-400 hover:text-orange-500"><Edit3 size={14} /></button>
@@ -2129,10 +2129,10 @@ function StoricoView({ quotes, onViewQuote, onDeleteQuote }) {
                 <p className="text-gray-400 text-xs mt-1">{q.data}</p>
               </div>
             </div>
-            <span className="font-bold text-orange-600">â¬ {q.totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="font-bold text-orange-600">€ {q.totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className="flex items-center justify-between mt-2">
-            <p className="text-gray-500 text-xs">{q.voci} voci Â· {q.descrizione?.substring(0, 50)}...</p>
+            <p className="text-gray-500 text-xs">{q.voci} voci · {q.descrizione?.substring(0, 50)}...</p>
             {!selectMode && (
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 text-orange-500 text-xs font-medium">
@@ -2178,11 +2178,11 @@ function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadP
   const [scadenza, setScadenza] = useState(isEditing ? (initialData.scadenza || defaultScadenza()) : defaultScadenza());
   const [pagamento, setPagamento] = useState(isEditing ? (initialData.pagamento || [
     { fase: "Anticipo alla conferma", percentuale: 35 },
-    { fase: "MetÃ  lavori", percentuale: 35 },
+    { fase: "Metà lavori", percentuale: 35 },
     { fase: "Fine lavori", percentuale: 30 },
   ]) : [
     { fase: "Anticipo alla conferma", percentuale: 35 },
-    { fase: "MetÃ  lavori", percentuale: 35 },
+    { fase: "Metà lavori", percentuale: 35 },
     { fase: "Fine lavori", percentuale: 30 },
   ]);
   const [photos, setPhotos] = useState(isEditing ? (initialData.photos || []) : []);
@@ -2273,7 +2273,7 @@ const startModifyRecording = () => {
     }, 110);
 
     try {
-        const result = await parseVoiceToQuote(text, prices, quotes);
+      const result = await parseVoiceToQuote(text, prices, quotes);
       // Complete the progress bar
       clearInterval(loadingIntervalRef.current);
       setLoadingProgress(100);
@@ -2465,7 +2465,7 @@ const startModifyRecording = () => {
             <Check size={36} className="text-green-600" />
           </div>
           <h3 className="text-xl font-bold text-gray-800">Preventivo Salvato!</h3>
-          <p className="text-gray-500 text-sm">Il preventivo Ã¨ stato salvato nello storico. Puoi scaricarlo come PDF, inoltrarlo al cliente o crearne un altro.</p>
+          <p className="text-gray-500 text-sm">Il preventivo è stato salvato nello storico. Puoi scaricarlo come PDF, inoltrarlo al cliente o crearne un altro.</p>
           <div className="space-y-2 pt-4">
             {lastSavedQuote && (
               <button onClick={() => onDownloadPDF(lastSavedQuote)} className="w-full bg-orange-500 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
@@ -2476,7 +2476,7 @@ const startModifyRecording = () => {
             {lastSavedQuote && (
               <ShareButton quote={lastSavedQuote} onDownloadPDF={onDownloadPDF} />
             )}
-            <button onClick={() => { setStep("voice"); setItems([]); setTranscript(""); setClientInfo({ nome: "", indirizzo: "", telefono: "" }); setDiscount({ enabled: false, tipo: "percentuale", valore: 0 }); setMargin({ enabled: false, tipo: "percentuale", valore: 20 }); setScadenza(defaultScadenza()); setPagamento([{fase:"Anticipo alla conferma",percentuale:35},{fase:"MetÃ  lavori",percentuale:35},{fase:"Fine lavori",percentuale:30}]); setPhotos([]); setDescrizione(""); setFirmaImpresa(""); setLuogoFirma(""); setLastSavedQuote(null); }} className="w-full bg-white border-2 border-orange-500 text-orange-500 py-3 rounded-xl font-semibold">
+            <button onClick={() => { setStep("voice"); setItems([]); setTranscript(""); setClientInfo({ nome: "", indirizzo: "", telefono: "" }); setDiscount({ enabled: false, tipo: "percentuale", valore: 0 }); setMargin({ enabled: false, tipo: "percentuale", valore: 20 }); setScadenza(defaultScadenza()); setPagamento([{fase:"Anticipo alla conferma",percentuale:35},{fase:"Metà lavori",percentuale:35},{fase:"Fine lavori",percentuale:30}]); setPhotos([]); setDescrizione(""); setFirmaImpresa(""); setLuogoFirma(""); setLastSavedQuote(null); }} className="w-full bg-white border-2 border-orange-500 text-orange-500 py-3 rounded-xl font-semibold">
               Crea un altro preventivo
             </button>
             <button onClick={() => onNavigate("home")} className="w-full bg-gray-100 text-gray-600 py-3 rounded-xl font-medium">
@@ -2536,27 +2536,27 @@ function generatePDF(quote, userProfile, returnBlob = false) {
         <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#374151;">${item.voce}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:center;">${item.quantita}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:center;">${item.unita}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:right;">â¬ ${fmt(item.prezzo)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:right;">€ ${fmt(item.prezzo)}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:center;">${item.iva || 22}%</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#1F2937;text-align:right;font-weight:600;">â¬ ${fmt(item.quantita * item.prezzo)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#1F2937;text-align:right;font-weight:600;">€ ${fmt(item.quantita * item.prezzo)}</td>
       </tr>`;
     });
   });
 
-  let totaliRows = `<tr><td style="padding:6px 12px;font-size:12px;color:#6B7280;">Subtotale voci</td><td style="padding:6px 12px;font-size:12px;color:#6B7280;text-align:right;">â¬ ${fmt(subtotale)}</td></tr>`;
+  let totaliRows = `<tr><td style="padding:6px 12px;font-size:12px;color:#6B7280;">Subtotale voci</td><td style="padding:6px 12px;font-size:12px;color:#6B7280;text-align:right;">€ ${fmt(subtotale)}</td></tr>`;
   if (marginEnabled && importoMargine > 0) {
-    totaliRows += `<tr><td style="padding:6px 12px;font-size:12px;color:#2563EB;">Margine ${marginTipo === "percentuale" ? `(${marginPerc}%)` : "fisso"}</td><td style="padding:6px 12px;font-size:12px;color:#2563EB;text-align:right;">+ â¬ ${fmt(importoMargine)}</td></tr>`;
+    totaliRows += `<tr><td style="padding:6px 12px;font-size:12px;color:#2563EB;">Margine ${marginTipo === "percentuale" ? `(${marginPerc}%)` : "fisso"}</td><td style="padding:6px 12px;font-size:12px;color:#2563EB;text-align:right;">+ € ${fmt(importoMargine)}</td></tr>`;
   }
   if (discountValore > 0 && importoSconto > 0) {
-    totaliRows += `<tr><td style="padding:6px 12px;font-size:12px;color:#16A34A;">Sconto ${discountTipo === "percentuale" ? `(${discountValore}%)` : "fisso"}</td><td style="padding:6px 12px;font-size:12px;color:#16A34A;text-align:right;">- â¬ ${fmt(importoSconto)}</td></tr>`;
+    totaliRows += `<tr><td style="padding:6px 12px;font-size:12px;color:#16A34A;">Sconto ${discountTipo === "percentuale" ? `(${discountValore}%)` : "fisso"}</td><td style="padding:6px 12px;font-size:12px;color:#16A34A;text-align:right;">- € ${fmt(importoSconto)}</td></tr>`;
   }
   if (marginEnabled || (discountValore > 0 && importoSconto > 0)) {
-    totaliRows += `<tr><td style="padding:6px 12px;font-size:12px;color:#6B7280;border-top:1px solid #E5E7EB;">Imponibile</td><td style="padding:6px 12px;font-size:12px;color:#6B7280;text-align:right;border-top:1px solid #E5E7EB;">â¬ ${fmt(subtotaleScontato)}</td></tr>`;
+    totaliRows += `<tr><td style="padding:6px 12px;font-size:12px;color:#6B7280;border-top:1px solid #E5E7EB;">Imponibile</td><td style="padding:6px 12px;font-size:12px;color:#6B7280;text-align:right;border-top:1px solid #E5E7EB;">€ ${fmt(subtotaleScontato)}</td></tr>`;
   }
   ivaDettaglioPDF.forEach(d => {
-    totaliRows += `<tr><td style="padding:6px 12px;font-size:12px;color:#6B7280;">IVA ${d.aliquota}%</td><td style="padding:6px 12px;font-size:12px;color:#6B7280;text-align:right;">â¬ ${fmt(d.importo)}</td></tr>`;
+    totaliRows += `<tr><td style="padding:6px 12px;font-size:12px;color:#6B7280;">IVA ${d.aliquota}%</td><td style="padding:6px 12px;font-size:12px;color:#6B7280;text-align:right;">€ ${fmt(d.importo)}</td></tr>`;
   });
-  totaliRows += `<tr><td style="padding:10px 12px;font-size:16px;font-weight:700;color:#1F2937;border-top:2px solid #EA580C;">TOTALE</td><td style="padding:10px 12px;font-size:16px;font-weight:700;color:#EA580C;text-align:right;border-top:2px solid #EA580C;">â¬ ${fmt(totale)}</td></tr>`;
+  totaliRows += `<tr><td style="padding:10px 12px;font-size:16px;font-weight:700;color:#1F2937;border-top:2px solid #EA580C;">TOTALE</td><td style="padding:10px 12px;font-size:16px;font-weight:700;color:#EA580C;text-align:right;border-top:2px solid #EA580C;">€ ${fmt(totale)}</td></tr>`;
 
   const aziendaNome = userProfile?.nomeAzienda || "La Tua Azienda";
   const aziendaLogo = userProfile?.logo || "";
@@ -2584,7 +2584,7 @@ function generatePDF(quote, userProfile, returnBlob = false) {
 
   <div style="background:#F9FAFB;border-radius:8px;padding:16px;margin-bottom:24px;">
     <p style="margin:0 0 4px;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;">Dati Cliente</p>
-    <p style="margin:0;font-size:15px;font-weight:600;color:#1F2937;">${quote.cliente || "â"}</p>
+    <p style="margin:0;font-size:15px;font-weight:600;color:#1F2937;">${quote.cliente || "—"}</p>
     ${quote.clientInfo?.indirizzo ? `<p style="margin:2px 0 0;font-size:13px;color:#6B7280;">${quote.clientInfo.indirizzo}</p>` : ""}
     ${quote.clientInfo?.telefono ? `<p style="margin:2px 0 0;font-size:13px;color:#6B7280;">Tel: ${quote.clientInfo.telefono}</p>` : ""}
   </div>
@@ -2598,7 +2598,7 @@ function generatePDF(quote, userProfile, returnBlob = false) {
     <thead>
       <tr style="background:#1F2937;">
         <th style="padding:10px 12px;text-align:left;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">Voce</th>
-        <th style="padding:10px 12px;text-align:center;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">Q.tÃ </th>
+        <th style="padding:10px 12px;text-align:center;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">Q.tà</th>
         <th style="padding:10px 12px;text-align:center;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">U.M.</th>
         <th style="padding:10px 12px;text-align:right;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">Prezzo</th>
         <th style="padding:10px 12px;text-align:center;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">IVA</th>
@@ -2614,9 +2614,9 @@ function generatePDF(quote, userProfile, returnBlob = false) {
 
   ${(quote.pagamento && quote.pagamento.length > 0) ? `
   <div style="margin-top:24px;background:#F9FAFB;border-radius:8px;padding:16px;">
-    <p style="margin:0 0 8px;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;">ModalitÃ  di Pagamento</p>
+    <p style="margin:0 0 8px;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;">Modalità di Pagamento</p>
     ${quote.pagamento.map(f => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:#6B7280;">
-      <span>${f.fase}</span><span style="font-weight:600;color:#1F2937;">${f.percentuale}% â â¬ ${fmt(totale * f.percentuale / 100)}</span>
+      <span>${f.fase}</span><span style="font-weight:600;color:#1F2937;">${f.percentuale}% — € ${fmt(totale * f.percentuale / 100)}</span>
     </div>`).join("")}
   </div>` : ""}
 
@@ -2644,7 +2644,7 @@ function generatePDF(quote, userProfile, returnBlob = false) {
 
   <div style="margin-top:${(quote.luogoFirma || quote.firmaImpresa) ? "20" : "40"}px;padding-top:16px;border-top:1px solid #E5E7EB;text-align:center;">
     <p style="margin:0;font-size:11px;color:#9CA3AF;">Preventivo valido ${quote.scadenza ? `fino al ${new Date(quote.scadenza).toLocaleDateString("it-IT")}` : "30 giorni dalla data di emissione"}</p>
-    <p style="margin:4px 0 0;font-size:11px;color:#9CA3AF;">${aziendaNome}${aziendaTel ? ` â Tel: ${aziendaTel}` : ""}${aziendaEmail ? ` â ${aziendaEmail}` : ""}</p>
+    <p style="margin:4px 0 0;font-size:11px;color:#9CA3AF;">${aziendaNome}${aziendaTel ? ` — Tel: ${aziendaTel}` : ""}${aziendaEmail ? ` — ${aziendaEmail}` : ""}</p>
   </div>
 </body></html>`;
 
@@ -2855,16 +2855,7 @@ export default function App({ session }) {
     setCurrentView("modifica");
   };
 
-  const handleDeleteQuote = async (quote, index) => {
-    const updated = quotes.filter((_, i) => i !== index);
-    setQuotes(updated);
-    if (quote._supabaseId) {
-      await supabase.from("quotes").delete().eq("id", quote._supabaseId);
-    }
-  };
-
   const handleDuplicateQuote = (quote) => {
-    // Duplicate: use editingQuote pattern (same as handleEditQuote) but strip IDs for new record
     const duplicated = {
       ...quote,
       _supabaseId: undefined,
@@ -2874,6 +2865,14 @@ export default function App({ session }) {
     };
     setEditingQuote(duplicated);
     setCurrentView("modifica");
+  };
+
+  const handleDeleteQuote = async (quote, index) => {
+    const updated = quotes.filter((_, i) => i !== index);
+    setQuotes(updated);
+    if (quote._supabaseId) {
+      await supabase.from("quotes").delete().eq("id", quote._supabaseId);
+    }
   };
 
   const costoMensile = costiFissi.reduce((sum, item) => {
@@ -2940,9 +2939,9 @@ export default function App({ session }) {
             quote={selectedQuote}
             onBack={() => setCurrentView("storico")}
             onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)}
-              onEdit={handleEditQuote}
-              onDuplicate={handleDuplicateQuote}
-            />
+            onEdit={handleEditQuote}
+                onDuplicate={handleDuplicateQuote}
+          />
         )}
 
         {currentView !== "home" && (
