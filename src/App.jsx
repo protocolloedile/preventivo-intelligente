@@ -2862,6 +2862,7 @@ export default function App({ session }) {
       _index: undefined,
       index: undefined,
       cliente: { nome: "", indirizzo: "", telefono: "", email: "", codiceFiscale: "" },
+      clientInfo: { nome: "", indirizzo: "", telefono: "", email: "", codiceFiscale: "" },
       data: new Date().toISOString().split('T')[0]
     };
     setEditingQuote(duplicated);
