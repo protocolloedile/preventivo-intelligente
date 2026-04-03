@@ -2151,7 +2151,7 @@ function StoricoView({ quotes, onViewQuote, onDeleteQuote }) {
   );
 }
 
-function NuovoPreventivo({ prices, clients, onSaveQuote, onNavigate, onDownloadPDF, initialData, userProfile }) {
+function NuovoPreventivo({ prices, clients, quotes, onSaveQuote, onNavigate, onDownloadPDF, initialData, userProfile }) {
   const isEditing = !!initialData;
 
   // Scadenza: default 30 giorni da oggi
@@ -2811,7 +2811,7 @@ export default function App({ session }) {
   };
 
   const saveQuote = async (quote) => {
-    if (editingQuote !== null) {
+    if (editingQuote !== null && editingQuote.index !== undefined) {
       const updated = [...quotes];
       updated[editingQuote.index] = quote;
       setQuotes(updated);
@@ -2860,6 +2860,7 @@ export default function App({ session }) {
       ...quote,
       _supabaseId: undefined,
       _index: undefined,
+      index: undefined,
       cliente: { nome: "", indirizzo: "", telefono: "", email: "", codiceFiscale: "" },
       data: new Date().toISOString().split('T')[0]
     };
@@ -2918,11 +2919,12 @@ export default function App({ session }) {
 
         {currentView === "home" && <HomeView onNavigate={setCurrentView} stats={stats} userProfile={userProfile} trialEnd={trialEnd} subscriptionStatus={subscriptionStatus} onShowPricing={() => setShowPricing(true)} />}
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
-        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)} userProfile={userProfile} />}
+        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} quotes={quotes} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)} userProfile={userProfile} />}
         {currentView === "modifica" && editingQuote && (
           <NuovoPreventivo
             prices={prices}
             clients={clients}
+            quotes={quotes}
             onSaveQuote={saveQuote}
             onNavigate={setCurrentView}
             onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)}
