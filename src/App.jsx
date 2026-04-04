@@ -2703,7 +2703,7 @@ export default
 
 // ========== INVITA UN AMICO ==========
 
-function InvitaAmico({ onNavigate, session, supabase, referralCode, referrals }) {
+function InvitaAmico({ onNavigate, session, referralCode, referrals }) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [referralList, setReferralList] = useState(referrals || []);
@@ -2731,12 +2731,14 @@ function InvitaAmico({ onNavigate, session, supabase, referralCode, referrals })
     if (!session?.user?.id) return;
     const loadReferrals = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("referrals")
-        .select("referred_email, status, rewarded, created_at")
-        .eq("referrer_id", session.user.id)
-        .order("created_at", { ascending: false });
-      if (data) setReferralList(data);
+      try {
+        const { data, error } = await supabase
+          .from("referrals")
+          .select("referred_email, status, rewarded, created_at")
+          .eq("referrer_id", session.user.id)
+          .order("created_at", { ascending: false });
+        if (data && !error) setReferralList(data);
+      } catch (e) { console.log("Referrals table may not exist yet:", e); }
       setLoading(false);
     };
     loadReferrals();
@@ -2857,7 +2859,7 @@ function InvitaAmico({ onNavigate, session, supabase, referralCode, referrals })
 
 // ========== GESTIONE ABBONAMENTO ==========
 
-function GestioneAbbonamento({ onNavigate, subscriptionStatus, trialEnd, onShowPricing, onCancelSubscription, session, supabase }) {
+function GestioneAbbonamento({ onNavigate, subscriptionStatus, trialEnd, onShowPricing, onCancelSubscription, session }) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showCancelFinal, setShowCancelFinal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -3299,8 +3301,8 @@ function App({ session }) {
 
         {currentView === "home" && <HomeView onNavigate={setCurrentView} stats={stats} userProfile={userProfile} trialEnd={trialEnd} subscriptionStatus={subscriptionStatus} onShowPricing={() => setShowPricing(true)} />}
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
-      {currentView === "gestione-abbonamento" && <GestioneAbbonamento onNavigate={(v) => setCurrentView(v)} subscriptionStatus={subscriptionStatus} trialEnd={trialEnd} onShowPricing={() => setShowPricing(true)} onCancelSubscription={() => setSubscriptionStatus("expired")} session={session} supabase={supabase} />}
-      {currentView === "invita-amico" && <InvitaAmico onNavigate={(v) => setCurrentView(v)} session={session} supabase={supabase} referralCode={referralCode} referrals={referrals} />}
+      {currentView === "gestione-abbonamento" && <GestioneAbbonamento onNavigate={(v) => setCurrentView(v)} subscriptionStatus={subscriptionStatus} trialEnd={trialEnd} onShowPricing={() => setShowPricing(true)} onCancelSubscription={() => setSubscriptionStatus("expired")} session={session} />}
+      {currentView === "invita-amico" && <InvitaAmico onNavigate={(v) => setCurrentView(v)} session={session} referralCode={referralCode} referrals={referrals} />}
         {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} quotes={quotes} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)} userProfile={userProfile} />}
         {currentView === "modifica" && editingQuote && (
           <NuovoPreventivo
