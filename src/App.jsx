@@ -1599,55 +1599,64 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
   const [promoError, setPromoError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handlePromo = () => {
-    const code = promoCode.trim().toUpperCase();
-      if (code === "PROVA14" || code === "PROVA30") {
-      setLoading(true);
-      onSubscribe(code);
-    } else {
-      setPromoError("Codice non valido");
+  const handleSubmit = () => {
+    setPromoError("");
+    setLoading(true);
+    const validCodes = ["PROVA14", "PROVA30"];
+    if (promoCode && !validCodes.includes(promoCode.toUpperCase())) {
+      setPromoError("Codice promo non valido");
+      setLoading(false);
+      return;
     }
+    onSubscribe(promoCode.toUpperCase());
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-2">🏗️</div>
-          <h1 className="text-3xl font-bold text-gray-800">Preventivo Intelligente</h1>
-          <p className="text-gray-500 mt-2">Scegli il tuo piano per iniziare</p>
-          {userEmail && <p className="text-xs text-gray-400 mt-1">{userEmail}</p>}
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center justify-center p-6">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">Preventivo Intelligente</h1>
+        <p className="text-center text-gray-500 mb-6">Piano Pro - €47/mese</p>
+
+        <div className="bg-blue-50 rounded-xl p-4 mb-6">
+          <h3 className="font-semibold text-blue-800 mb-2">✨ Come funziona</h3>
+          <ul className="text-sm text-blue-700 space-y-1">
+            <li>• Inserisci la tua carta di credito</li>
+            <li>• Se hai un codice promo, ottieni giorni gratuiti</li>
+            <li>• Al termine della prova, l'abbonamento parte in automatico</li>
+            <li>• Puoi annullare in qualsiasi momento dal sito</li>
+          </ul>
         </div>
-        <div className="bg-white rounded-2xl shadow-xl border-2 border-orange-400 overflow-hidden">
-          <div className="bg-orange-500 text-white text-center py-3 font-bold text-lg">Piano Pro</div>
-          <div className="p-6">
-            <div className="text-center mb-6">
-              <span className="text-5xl font-bold text-gray-800">€47</span>
-              <span className="text-gray-500">/mese</span>
-            </div>
-            <ul className="space-y-3 mb-6">
-              {["Preventivi illimitati", "Generazione PDF professionale", "Invio WhatsApp ed Email", "Prompt vocale AI", "Gestione clienti", "Prezzario personalizzabile", "Aggiornamenti continui", "Supporto WhatsApp 7/7"].map((f, i) => (
-                <li key={i} className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <button onClick={() => { setLoading(true); onSubscribe(null); }} disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition disabled:opacity-50">
-              {loading ? "Reindirizzamento..." : "Abbonati ora"}
-            </button>
-            <div className="mt-4 border-t pt-4">
-              <p className="text-sm text-gray-500 text-center mb-2">Hai un codice promozionale?</p>
-              <div className="flex gap-2">
-                <input type="text" value={promoCode} onChange={(e) => { setPromoCode(e.target.value); setPromoError(""); }} placeholder="Inserisci codice" className="flex-1 border rounded-lg px-3 py-2 text-sm"/>
-                <button onClick={handlePromo} className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition">Applica</button>
-              </div>
-              {promoError && <p className="text-red-500 text-xs mt-1">{promoError}</p>}
-            </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Codice Promo (opzionale)</label>
+            <input
+              type="text"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
+              placeholder="Es: PROVA14"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            {promoError && <p className="text-red-500 text-sm mt-1">{promoError}</p>}
           </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
+          >
+            {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : "Abbonati ora - €47/mese"}
+          </button>
+
+          <p className="text-xs text-center text-gray-400">
+            {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi €47/mese" : "Pagamento sicuro tramite Stripe"}
+          </p>
         </div>
-          {onBack && <button onClick={onBack} className="w-full mt-4 flex items-center justify-center gap-1 text-orange-500 hover:text-orange-600 text-sm py-2 transition"><ArrowLeft size={16} /><span>Indietro</span></button>}
-          <button onClick={onLogout} className="w-full mt-2 text-gray-400 hover:text-gray-600 text-sm py-2 transition">Esci dall'account</button>
+
+        <div className="mt-6 flex justify-between">
+          <button onClick={onLogout} className="text-sm text-gray-400 hover:text-gray-600">Logout</button>
+          {onBack && <button onClick={onBack} className="text-sm text-blue-500 hover:text-blue-700">Indietro</button>}
+        </div>
       </div>
     </div>
   );
@@ -2892,18 +2901,27 @@ function GestioneAbbonamento({ onNavigate, subscriptionStatus, trialEnd, onShowP
     setShowCancelFinal(true);
   };
 
-  const handleCancelFinal = async () => {
+  const handleFinalCancel = async () => {
     setCancelling(true);
     try {
-      await supabase.from("profiles").update({ subscription_status: "expired" }).eq("id", session.user.id);
-      if (onCancelSubscription) onCancelSubscription();
-      alert("Abbonamento annullato con successo.");
-      onNavigate("home");
+      // Cancel on Stripe first
+      const stripeRes = await fetch("/api/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: session?.user?.email }),
+      });
+      const stripeData = await stripeRes.json();
+      
+      // Update local profile
+      const { error } = await supabase.from("profiles").update({ subscription_status: "expired" }).eq("id", session?.user?.id);
+      onCancelSubscription();
+      alert(stripeData.success ? "Abbonamento annullato. Rimarr\u00e0 attivo fino alla fine del periodo corrente." : "Abbonamento annullato localmente.");
     } catch (err) {
+      console.error(err);
       alert("Errore durante l'annullamento. Riprova.");
     }
     setCancelling(false);
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
@@ -3271,22 +3289,18 @@ export default function App({ session }) {
   const isSubscribed = subscriptionStatus === "active" || subscriptionStatus === "trialing";
 
   const handleSubscribe = async (promoCode) => {
-    if (promoCode === "PROVA14" || promoCode === "PROVA30") {
-      const trialEnd = new Date();
-      trialEnd.setDate(trialEnd.getDate() + (promoCode === "PROVA30" ? 30 : 14));
-      const { error } = await supabase.from("profiles").update({ subscription_status: "trialing", trial_end: trialEnd.toISOString() }).eq("id", session.user.id);
-      if (!error) { setSubscriptionStatus("trialing"); }
-      return;
-    }
+    let trialDays = 0;
+    if (promoCode === "PROVA14") trialDays = 14;
+    else if (promoCode === "PROVA30") trialDays = 30;
     try {
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: session.user.id, email: session.user.email })
+        body: JSON.stringify({ userId: session.user.id, email: session.user.email, trialDays }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-    } catch (err) { alert("Errore durante il checkout. Riprova."); }
+    } catch (err) { console.error(err); }
   };
 
   if (dataLoaded && (!isSubscribed || showPricing)) {
