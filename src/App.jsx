@@ -2901,7 +2901,7 @@ function GestioneAbbonamento({ onNavigate, subscriptionStatus, trialEnd, onShowP
     setShowCancelFinal(true);
   };
 
-  const handleFinalCancel = async () => {
+  const handleCancelFinal = async () => {
     setCancelling(true);
     try {
       // Cancel on Stripe first
