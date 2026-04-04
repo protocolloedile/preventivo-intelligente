@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Mic, MicOff, FileText, Database, Plus, Trash2, Edit3, Check, X, Download, Volume2, ChevronRight, ChevronUp, ChevronDown, Home, ArrowLeft, Search, Save, RefreshCw, Eye, Printer, Users, UserPlus, Phone, Camera, Image, Send, Mail, MessageCircle, GripVertical, Settings, Upload, Building2, LogOut, User, TrendingUp, Copy } from "lucide-react";
+import { Mic, MicOff, FileText, Database, Plus, Trash2, Edit3, Check, X, Download, Volume2, ChevronRight, ChevronUp, ChevronDown, Home, ArrowLeft, Search, Save, RefreshCw, Eye, Printer, Users, UserPlus, Phone, Camera, Image, Send, Mail, MessageCircle, GripVertical, Settings, Upload, Building2, LogOut, User, TrendingUp, Copy, Gift, Share2, CreditCard, AlertTriangle, Crown, Link2, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from "./supabaseClient";
 
 // ========== DATABASE PREZZI DEFAULT ==========
@@ -123,6 +123,14 @@ function Header({ currentView, onNavigate, userProfile, onLogout }) {
               <button onClick={() => { onNavigate("profilo"); setShowMenu(false); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Profilo Azienda
+              </button>
+              <button onClick={() => { onNavigate("gestione-abbonamento"); }} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 transition-colors">
+                <CreditCard className="w-4 h-4 text-orange-500" />
+                Gestione Abbonamento
+              </button>
+              <button onClick={() => { onNavigate("invita-amico"); }} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 transition-colors">
+                <Gift className="w-4 h-4 text-orange-500" />
+                Invita un Amico
               </button>
               <div className="border-t border-gray-100"></div>
               <button onClick={() => { onLogout(); setShowMenu(false); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition">
@@ -2691,7 +2699,310 @@ function generatePDF(quote, userProfile, returnBlob = false) {
 
 
 // ========== MAIN APP ==========
-export default function App({ session }) {
+export default 
+
+// ========== INVITA UN AMICO ==========
+
+function InvitaAmico({ onNavigate, session, supabase, referralCode, referrals }) {
+  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [referralList, setReferralList] = useState(referrals || []);
+
+  const referralLink = window.location.origin + "?ref=" + (referralCode || "");
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(referralLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleShare = () => {
+    const text = "Ciao! Ti consiglio Preventivo Intelligente per creare preventivi edili in modo veloce e professionale. Usa il mio link per avere 30 giorni gratuiti: " + referralLink;
+    if (navigator.share) {
+      navigator.share({ title: "Preventivo Intelligente", text: text, url: referralLink });
+    } else {
+      const waUrl = "https://wa.me/?text=" + encodeURIComponent(text);
+      window.open(waUrl, "_blank");
+    }
+  };
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const loadReferrals = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from("referrals")
+        .select("referred_email, status, rewarded, created_at")
+        .eq("referrer_id", session.user.id)
+        .order("created_at", { ascending: false });
+      if (data) setReferralList(data);
+      setLoading(false);
+    };
+    loadReferrals();
+  }, [session?.user?.id]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
+      <div className="max-w-lg mx-auto px-4 pt-6 pb-20">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => onNavigate("home")} className="p-2 rounded-full hover:bg-orange-100 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <h1 className="text-xl font-bold text-gray-800">Invita un Amico</h1>
+        </div>
+
+        <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-6 mb-4 text-white">
+          <div className="flex items-center gap-3 mb-3">
+            <Gift className="w-8 h-8" />
+            <div>
+              <h2 className="font-bold text-lg">Regala 30 giorni gratis!</h2>
+              <p className="text-sm text-orange-100">E ricevi 30 giorni gratis anche tu</p>
+            </div>
+          </div>
+          <p className="text-sm text-orange-100 mt-2">Invita un amico imprenditore edile. Quando si iscrive e paga il primo mese, entrambi ricevete 30 giorni gratuiti!</p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
+          <h3 className="font-semibold text-gray-800 mb-3">Il tuo link di invito</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex-1 bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-600 truncate border border-gray-200">
+              {referralLink}
+            </div>
+            <button onClick={handleCopy} className={"p-3 rounded-xl transition-colors " + (copied ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600 hover:bg-orange-200")}>
+              {copied ? <CheckCircle className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+            </button>
+          </div>
+          <button onClick={handleShare} className="w-full py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+            <Share2 className="w-5 h-5" />
+            Condividi su WhatsApp
+          </button>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
+          <h3 className="font-semibold text-gray-800 mb-1">Come funziona</h3>
+          <div className="space-y-3 mt-3">
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-bold text-orange-600">1</span>
+              </div>
+              <p className="text-sm text-gray-600">Condividi il tuo link con un collega imprenditore edile</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-bold text-orange-600">2</span>
+              </div>
+              <p className="text-sm text-gray-600">Il tuo amico si registra e riceve 30 giorni di prova gratuita</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-bold text-orange-600">3</span>
+              </div>
+              <p className="text-sm text-gray-600">Quando paga il primo mese, tu ricevi 30 giorni gratuiti in regalo!</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-800">Persone invitate</h3>
+            <span className="text-xs text-gray-400">{referralList.length} inviti</span>
+          </div>
+          {loading ? (
+            <div className="text-center py-4 text-sm text-gray-400">Caricamento...</div>
+          ) : referralList.length === 0 ? (
+            <div className="text-center py-6">
+              <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-400">Non hai ancora invitato nessuno</p>
+              <p className="text-xs text-gray-300 mt-1">Condividi il tuo link per iniziare!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {referralList.map((r, i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <div className={"w-8 h-8 rounded-full flex items-center justify-center " + (r.status === "paid" ? "bg-green-100" : r.status === "registered" ? "bg-blue-100" : "bg-gray-100")}>
+                      <User className={"w-4 h-4 " + (r.status === "paid" ? "text-green-600" : r.status === "registered" ? "text-blue-600" : "text-gray-400")} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">{r.referred_email || "Utente"}</p>
+                      <p className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString("it-IT")}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {r.status === "paid" ? (
+                      <span className="flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                        <CheckCircle className="w-3 h-3" /> Pagato
+                      </span>
+                    ) : r.status === "registered" ? (
+                      <span className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                        <User className="w-3 h-3" /> Registrato
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                        <XCircle className="w-3 h-3" /> In attesa
+                      </span>
+                    )}
+                    {r.rewarded && <span className="text-xs text-orange-500 font-medium ml-1">+30gg</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ========== GESTIONE ABBONAMENTO ==========
+
+function GestioneAbbonamento({ onNavigate, subscriptionStatus, trialEnd, onShowPricing, onCancelSubscription, session, supabase }) {
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showCancelFinal, setShowCancelFinal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+
+  const getStatusLabel = () => {
+    switch(subscriptionStatus) {
+      case "active": return { text: "Attivo", color: "text-green-600 bg-green-50" };
+      case "trialing": return { text: "Prova Gratuita", color: "text-blue-600 bg-blue-50" };
+      case "expired": return { text: "Scaduto", color: "text-red-600 bg-red-50" };
+      default: return { text: "Nessun Abbonamento", color: "text-gray-600 bg-gray-50" };
+    }
+  };
+
+  const status = getStatusLabel();
+
+  const getExpiryText = () => {
+    if (subscriptionStatus === "trialing" && trialEnd) {
+      const end = new Date(trialEnd);
+      const days = Math.ceil((end - new Date()) / (1000 * 60 * 60 * 24));
+      return days > 0 ? days + " giorni rimanenti" : "Scaduta";
+    }
+    if (subscriptionStatus === "active") return "Rinnovo automatico mensile";
+    return "";
+  };
+
+  const handleCancelStep1 = () => setShowCancelConfirm(true);
+  
+  const handleCancelStep2 = () => {
+    if (!cancelReason.trim()) return;
+    setShowCancelFinal(true);
+  };
+
+  const handleCancelFinal = async () => {
+    setCancelling(true);
+    try {
+      await supabase.from("profiles").update({ subscription_status: "expired" }).eq("id", session.user.id);
+      if (onCancelSubscription) onCancelSubscription();
+      alert("Abbonamento annullato con successo.");
+      onNavigate("home");
+    } catch (err) {
+      alert("Errore durante l'annullamento. Riprova.");
+    }
+    setCancelling(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
+      <div className="max-w-lg mx-auto px-4 pt-6 pb-20">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => onNavigate("home")} className="p-2 rounded-full hover:bg-orange-100 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <h1 className="text-xl font-bold text-gray-800">Gestione Abbonamento</h1>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                <Crown className="w-6 h-6 text-orange-600" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-gray-800">Preventivo Intelligente</h2>
+                <p className="text-sm text-gray-500">Piano Mensile</p>
+              </div>
+            </div>
+            <span className={"px-3 py-1 rounded-full text-xs font-medium " + status.color}>{status.text}</span>
+          </div>
+          
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Prezzo</span>
+              <span className="font-medium text-gray-800">47,00 EUR/mese</span>
+            </div>
+            {getExpiryText() && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Stato</span>
+                <span className="font-medium text-gray-800">{getExpiryText()}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {(subscriptionStatus === "none" || subscriptionStatus === "expired") && (
+          <button onClick={() => onShowPricing()} className="w-full py-3 bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 transition-colors mb-4">
+            Attiva Abbonamento
+          </button>
+        )}
+
+        {(subscriptionStatus === "active" || subscriptionStatus === "trialing") && !showCancelConfirm && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
+            <h3 className="font-semibold text-gray-800 mb-3">Azioni</h3>
+            <button onClick={handleCancelStep1} className="w-full py-3 border border-red-200 text-red-500 rounded-xl font-medium hover:bg-red-50 transition-colors text-sm">
+              Annulla Abbonamento
+            </button>
+          </div>
+        )}
+
+        {showCancelConfirm && !showCancelFinal && (
+          <div className="bg-red-50 rounded-2xl border-2 border-red-200 p-6 mb-4">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-500" />
+              <h3 className="font-bold text-red-700">Sei sicuro di voler annullare?</h3>
+            </div>
+            <p className="text-sm text-red-600 mb-4">Perderai l'accesso a tutte le funzionalita premium, inclusa la generazione automatica dei preventivi con l'intelligenza artificiale.</p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-red-700 mb-2">Perche vuoi annullare? (obbligatorio)</label>
+              <textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Dicci perche vuoi andare via..." className="w-full p-3 border border-red-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-300" rows={3} />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setShowCancelConfirm(false); setCancelReason(""); }} className="flex-1 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-colors text-sm">
+                No, voglio restare!
+              </button>
+              <button onClick={handleCancelStep2} disabled={!cancelReason.trim()} className="flex-1 py-3 border border-red-300 text-red-600 rounded-xl font-medium hover:bg-red-100 transition-colors text-sm disabled:opacity-40">
+                Continua annullamento
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showCancelFinal && (
+          <div className="bg-red-50 rounded-2xl border-2 border-red-300 p-6 mb-4">
+            <div className="text-center mb-4">
+              <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-2" />
+              <h3 className="font-bold text-red-800 text-lg">Ultima possibilita!</h3>
+              <p className="text-sm text-red-600 mt-2">Questa azione e irreversibile. Perderai immediatamente l'accesso a tutte le funzionalita premium.</p>
+              <p className="text-sm text-red-700 font-semibold mt-3">Sei davvero, davvero sicuro?</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setShowCancelFinal(false); setShowCancelConfirm(false); setCancelReason(""); }} className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-colors">
+                Ci ho ripensato, resto!
+              </button>
+              <button onClick={handleCancelFinal} disabled={cancelling} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors text-sm disabled:opacity-50">
+                {cancelling ? "Annullamento..." : "Annulla definitivamente"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function App({ session }) {
   const [currentView, setCurrentView] = useState("home");
   const [prices, setPrices] = useState(DEFAULT_PRICES);
   const [quotes, setQuotes] = useState([]);
@@ -2704,11 +3015,71 @@ export default function App({ session }) {
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [trialEnd, setTrialEnd] = useState(null);
   const [showPricing, setShowPricing] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
+  const [referrals, setReferrals] = useState([]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    // Track referral code from URL
+    const refCode = params.get("ref");
+    if (refCode && session?.user?.id) {
+      // Save referred_by in profile if not already set
+      supabase.from("profiles").select("referred_by").eq("id", session.user.id).single().then(({ data: pData }) => {
+        if (pData && !pData.referred_by) {
+          supabase.from("profiles").update({ referred_by: refCode }).eq("id", session.user.id);
+        }
+      });
+    }
     if (params.get("subscription") === "success" && session?.user?.id) {
-      supabase.from("profiles").update({ subscription_status: "active" }).eq("id", session.user.id).then(() => {
+      supabase.from("profiles").update({ subscription_status: "active" }).eq("id", session.user.id).then(async () => {
+        // Check if this user was referred and reward the referrer (only first time)
+        try {
+          const { data: myProfile } = await supabase.from("profiles").select("referred_by").eq("id", session.user.id).single();
+          if (myProfile?.referred_by) {
+            // Find the referrer by their referral_code
+            const { data: referrer } = await supabase.from("profiles").select("id").eq("referral_code", myProfile.referred_by).single();
+            if (referrer) {
+              // Check if referral already exists and was already rewarded
+              const { data: existingRef } = await supabase.from("referrals").select("id, rewarded").eq("referrer_id", referrer.id).eq("referred_id", session.user.id).single();
+              if (!existingRef) {
+                // Create referral record and mark as paid
+                await supabase.from("referrals").insert({
+                  referrer_id: referrer.id,
+                  referred_id: session.user.id,
+                  referred_email: session.user.email,
+                  status: "paid",
+                  rewarded: true,
+                  referral_code: myProfile.referred_by
+                });
+                // Grant 30 free days to referrer by extending their subscription
+                const { data: referrerProfile } = await supabase.from("profiles").select("subscription_status, trial_end").eq("id", referrer.id).single();
+                const now = new Date();
+                let newEnd = new Date();
+                if (referrerProfile?.subscription_status === "trialing" && referrerProfile?.trial_end) {
+                  const currentEnd = new Date(referrerProfile.trial_end);
+                  newEnd = currentEnd > now ? new Date(currentEnd.getTime() + 30 * 24 * 60 * 60 * 1000) : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+                } else if (referrerProfile?.subscription_status === "active") {
+                  newEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+                } else {
+                  newEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+                }
+                await supabase.from("profiles").update({ subscription_status: "trialing", trial_end: newEnd.toISOString() }).eq("id", referrer.id);
+              } else if (existingRef && !existingRef.rewarded) {
+                // Update existing referral to paid and reward
+                await supabase.from("referrals").update({ status: "paid", rewarded: true }).eq("id", existingRef.id);
+                // Grant 30 days (same logic)
+                const { data: referrerProfile } = await supabase.from("profiles").select("subscription_status, trial_end").eq("id", referrer.id).single();
+                const now2 = new Date();
+                let newEnd2 = new Date(now2.getTime() + 30 * 24 * 60 * 60 * 1000);
+                if (referrerProfile?.trial_end) {
+                  const currentEnd = new Date(referrerProfile.trial_end);
+                  if (currentEnd > now2) newEnd2 = new Date(currentEnd.getTime() + 30 * 24 * 60 * 60 * 1000);
+                }
+                await supabase.from("profiles").update({ subscription_status: "trialing", trial_end: newEnd2.toISOString() }).eq("id", referrer.id);
+              }
+            }
+          }
+        } catch (e) { console.log("Referral reward error:", e); }
         setSubscriptionStatus("active");
         window.history.replaceState({}, "", window.location.pathname);
       });
@@ -2736,6 +3107,14 @@ export default function App({ session }) {
           });
         // Carica stato abbonamento
         const subStatus = profileData.subscription_status || "none";
+        // Load or generate referral code
+        if (!profileData.referral_code) {
+          const code = session.user.id.substring(0, 8).toUpperCase();
+          await supabase.from("profiles").update({ referral_code: code }).eq("id", userId);
+          setReferralCode(code);
+        } else {
+          setReferralCode(profileData.referral_code);
+        }
         if (subStatus === "trialing" && profileData.trial_end) {
           const trialEndDate = new Date(profileData.trial_end);
           if (trialEndDate < new Date()) {
@@ -2920,6 +3299,8 @@ export default function App({ session }) {
 
         {currentView === "home" && <HomeView onNavigate={setCurrentView} stats={stats} userProfile={userProfile} trialEnd={trialEnd} subscriptionStatus={subscriptionStatus} onShowPricing={() => setShowPricing(true)} />}
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
+      {currentView === "gestione-abbonamento" && <GestioneAbbonamento onNavigate={(v) => setCurrentView(v)} subscriptionStatus={subscriptionStatus} trialEnd={trialEnd} onShowPricing={() => setShowPricing(true)} onCancelSubscription={() => setSubscriptionStatus("expired")} session={session} supabase={supabase} />}
+      {currentView === "invita-amico" && <InvitaAmico onNavigate={(v) => setCurrentView(v)} session={session} supabase={supabase} referralCode={referralCode} referrals={referrals} />}
         {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} quotes={quotes} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)} userProfile={userProfile} />}
         {currentView === "modifica" && editingQuote && (
           <NuovoPreventivo
