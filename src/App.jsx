@@ -1598,8 +1598,13 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
   const [promoCode, setPromoCode] = useState("");
   const [promoError, setPromoError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState("pro");
 
   const handleSubmit = () => {
+    if (selectedPlan === "custom") {
+      window.open("https://calendar.app.google/ymhcaEWt46ew6yDV9", "_blank");
+      return;
+    }
     setPromoError("");
     setLoading(true);
     const validCodes = ["PROVA14", "PROVA30"];
@@ -1613,47 +1618,100 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center justify-center p-6">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+      <div className="max-w-md w-full">
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">Preventivo Intelligente</h1>
-        <p className="text-center text-gray-500 mb-6">Piano Pro - €47/mese</p>
+        <p className="text-center text-gray-500 mb-6">Scegli il piano adatto a te</p>
 
-        <div className="bg-blue-50 rounded-xl p-4 mb-6">
-          <h3 className="font-semibold text-blue-800 mb-2">✨ Come funziona</h3>
-          <ul className="text-sm text-blue-700 space-y-1">
-            <li>• Inserisci la tua carta di credito</li>
-            <li>• Se hai un codice promo, ottieni giorni gratuiti</li>
-            <li>• Al termine della prova, l'abbonamento parte in automatico</li>
-            <li>• Puoi annullare in qualsiasi momento dal sito</li>
-          </ul>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Codice Promo (opzionale)</label>
-            <input
-              type="text"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              placeholder="Es: PROVA14"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            {promoError && <p className="text-red-500 text-sm mt-1">{promoError}</p>}
+        {/* Piano Pro */}
+        <div
+          onClick={() => setSelectedPlan("pro")}
+          className={"bg-white rounded-2xl shadow-lg p-6 mb-4 cursor-pointer border-2 transition " + (selectedPlan === "pro" ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-blue-300")}
+        >
+          <div className="flex justify-between items-start mb-3">
+            <div>
+              <h2 className="text-lg font-bold text-gray-800">Piano Pro</h2>
+              <p className="text-sm text-gray-500">Per imprenditori edili</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-blue-600">\u20AC47</p>
+              <p className="text-xs text-gray-400">/mese</p>
+            </div>
           </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
-          >
-            {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : "Abbonati ora - €47/mese"}
-          </button>
-
-          <p className="text-xs text-center text-gray-400">
-            {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi €47/mese" : "Pagamento sicuro tramite Stripe"}
-          </p>
+          <ul className="text-sm text-gray-600 space-y-1 mb-3">
+            <li>\u2713 Preventivi illimitati con AI</li>
+            <li>\u2713 Database prezzi personalizzato</li>
+            <li>\u2713 Gestione clienti</li>
+            <li>\u2713 Esportazione PDF professionale</li>
+            <li>\u2713 Costi fissi e margini automatici</li>
+          </ul>
+          {selectedPlan === "pro" && (
+            <div className="border-t pt-4 mt-2">
+              <div className="bg-blue-50 rounded-xl p-3 mb-3">
+                <p className="text-xs text-blue-700">\u2728 Inserisci la carta di credito. Se hai un codice promo, ottieni giorni gratuiti. Al termine della prova, l'abbonamento parte in automatico.</p>
+              </div>
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Codice Promo (opzionale)</label>
+                <input
+                  type="text"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                  placeholder="Es: PROVA14"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {promoError && <p className="text-red-500 text-xs mt-1">{promoError}</p>}
+              </div>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : "Abbonati ora - \u20AC47/mese"}
+              </button>
+              <p className="text-xs text-center text-gray-400 mt-2">
+                {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi \u20AC47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi \u20AC47/mese" : "Pagamento sicuro tramite Stripe"}
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="mt-6 flex justify-between">
+        {/* Piano Custom */}
+        <div
+          onClick={() => setSelectedPlan("custom")}
+          className={"bg-white rounded-2xl shadow-lg p-6 mb-4 cursor-pointer border-2 transition " + (selectedPlan === "custom" ? "border-orange-500 ring-2 ring-orange-200" : "border-gray-200 hover:border-orange-300")}
+        >
+          <div className="flex justify-between items-start mb-3">
+            <div>
+              <h2 className="text-lg font-bold text-gray-800">Abbonamento Custom</h2>
+              <p className="text-sm text-gray-500">Per aziende che vogliono un software su misura</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-bold text-orange-600">Su misura</p>
+              <p className="text-xs text-gray-400">prezzo personalizzato</p>
+            </div>
+          </div>
+          <ul className="text-sm text-gray-600 space-y-1 mb-3">
+            <li>\u2713 Tutte le funzionalit\u00e0 del Piano Pro</li>
+            <li>\u2713 Software completamente personalizzato</li>
+            <li>\u2713 Flussi di lavoro su misura per la tua azienda</li>
+            <li>\u2713 Supporto dedicato e prioritario</li>
+            <li>\u2713 Integrazioni personalizzate</li>
+          </ul>
+          {selectedPlan === "custom" && (
+            <div className="border-t pt-4 mt-2">
+              <div className="bg-orange-50 rounded-xl p-3 mb-3">
+                <p className="text-xs text-orange-700">\ud83d\udcde Prenota una chiamata gratuita con il nostro team per discutere le tue esigenze e ricevere un preventivo personalizzato.</p>
+              </div>
+              <button
+                onClick={handleSubmit}
+                className="w-full bg-orange-500 text-white font-semibold py-3 rounded-xl hover:bg-orange-600 transition"
+              >
+                Prenota una Chiamata Gratuita
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-between mt-4">
           <button onClick={onLogout} className="text-sm text-gray-400 hover:text-gray-600">Logout</button>
           {onBack && <button onClick={onBack} className="text-sm text-blue-500 hover:text-blue-700">Indietro</button>}
         </div>
