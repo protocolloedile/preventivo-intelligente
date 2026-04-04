@@ -6,8 +6,8 @@ import { supabase } from "./supabaseClient";
 const DEFAULT_PRICES = [
   // Demolizioni
   { id: 1, categoria: "Demolizioni", voce: "Demolizione pavimento", unita: "mq", costoInterno: 11, prezzo: 18, note: "Incluso smaltimento", iva: 22 },
-  { id: 2, categoria: "Demolizioni", voce: "Demolizione rivestimento bagno", unita: "mq", costoInterno: 9, prezzo: 15, note: "Pareti e pavimento", iva: 22 },
-  { id: 3, categoria: "Demolizioni", voce: "Demolizione tramezza", unita: "mq", costoInterno: 13, prezzo: 22, note: "Spessore fino a 12cm", iva: 22 },
+  { id: 2, categoria: "Demolizioni", vce: "Demolizione rivestimento bagno", unita: "mq", costoInterno: 9, prezzo: 15, note: "Pareti e pavimento", iva: 22 },
+  { id: 3, categoria: "Demolizioni", voce: "Demolizione tramezza",unita: "mq", costoInterno: 13, prezzo: 22, note: "Spessore fino a 12cm", iva: 22 },
   { id: 4, categoria: "Demolizioni", voce: "Rimozione vasca da bagno", unita: "cad", costoInterno: 90, prezzo: 150, note: "Incluso trasporto", iva: 22 },
   { id: 5, categoria: "Demolizioni", voce: "Rimozione sanitari", unita: "cad", costoInterno: 27, prezzo: 45, note: "Per singolo pezzo", iva: 22 },
   // Muratura
@@ -2699,7 +2699,6 @@ function generatePDF(quote, userProfile, returnBlob = false) {
 
 
 // ========== MAIN APP ==========
-export default 
 
 // ========== INVITA UN AMICO ==========
 
@@ -3004,7 +3003,7 @@ function GestioneAbbonamento({ onNavigate, subscriptionStatus, trialEnd, onShowP
   );
 }
 
-function App({ session }) {
+export default function App({ session }) {
   const [currentView, setCurrentView] = useState("home");
   const [prices, setPrices] = useState(DEFAULT_PRICES);
   const [quotes, setQuotes] = useState([]);
