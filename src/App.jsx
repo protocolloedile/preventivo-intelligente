@@ -1607,7 +1607,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
     }
     setPromoError("");
     setLoading(true);
-    const validCodes = ["PROVA14", "PROVA30"];
+    const validCodes = ["PROVA14", "PROVA30", "TEST2026"];
     if (promoCode && !validCodes.includes(promoCode.toUpperCase())) {
       setPromoError("Codice promo non valido");
       setLoading(false);
