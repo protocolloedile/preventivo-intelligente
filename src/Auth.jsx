@@ -21,7 +21,7 @@ const InputField = ({ icon: Icon, label, type = "text", value, onChange, placeho
 );
 
 export default function Auth() {
-  const [mode, setMode] = useState("login");
+  const [mode, setMode] = useState("register");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -148,6 +148,16 @@ export default function Auth() {
           <div className="text-5xl mb-3">🏗️</div>
           <h1 className="text-2xl font-bold text-gray-800">Preventivo Intelligente</h1>
           <p className="text-gray-500 text-sm mt-1">Crea preventivi edili professionali con l'AI</p>
+        {mode === "register" && (
+          <div className="mt-3 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+            <p className="text-green-700 font-semibold text-sm flex items-center justify-center gap-1">
+              🎉 14 giorni GRATIS per tutti!
+            </p>
+            <p className="text-green-600 text-xs text-center mt-1">
+              Inserisci la carta per iniziare — non verrà addebitato nulla durante la prova.
+            </p>
+          </div>
+        )}
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6">
