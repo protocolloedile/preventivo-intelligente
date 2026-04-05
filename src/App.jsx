@@ -1633,21 +1633,21 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
               <p className="text-sm text-gray-500">Per imprenditori edili</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-blue-600">\u20AC47</p>
+              <p className="text-2xl font-bold text-blue-600">€47</p>
               <p className="text-xs text-gray-400">/mese</p>
             </div>
           </div>
           <ul className="text-sm text-gray-600 space-y-1 mb-3">
-            <li>\u2713 Preventivi illimitati con AI</li>
-            <li>\u2713 Database prezzi personalizzato</li>
-            <li>\u2713 Gestione clienti</li>
-            <li>\u2713 Esportazione PDF professionale</li>
-            <li>\u2713 Costi fissi e margini automatici</li>
+            <li>✓ Preventivi illimitati con AI</li>
+            <li>✓ Database prezzi personalizzato</li>
+            <li>✓ Gestione clienti</li>
+            <li>✓ Esportazione PDF professionale</li>
+            <li>✓ Costi fissi e margini automatici</li>
           </ul>
           {selectedPlan === "pro" && (
             <div className="border-t pt-4 mt-2">
               <div className="bg-blue-50 rounded-xl p-3 mb-3">
-                <p className="text-xs text-blue-700">\u2728 Inserisci la carta di credito. Se hai un codice promo, ottieni giorni gratuiti. Al termine della prova, l'abbonamento parte in automatico.</p>
+                <p className="text-xs text-blue-700">✨ Inserisci la carta di credito. Se hai un codice promo, ottieni giorni gratuiti. Al termine della prova, l'abbonamento parte in automatico.</p>
               </div>
               <div className="mb-3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Codice Promo (opzionale)</label>
@@ -1665,10 +1665,10 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
                 disabled={loading}
                 className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
               >
-                {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : "Abbonati ora - \u20AC47/mese"}
+                {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : "Abbonati ora - €47/mese"}
               </button>
               <p className="text-xs text-center text-gray-400 mt-2">
-                {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi \u20AC47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi \u20AC47/mese" : "Pagamento sicuro tramite Stripe"}
+                {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi €47/mese" : "Pagamento sicuro tramite Stripe"}
               </p>
             </div>
           )}
@@ -1690,16 +1690,16 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
             </div>
           </div>
           <ul className="text-sm text-gray-600 space-y-1 mb-3">
-            <li>\u2713 Tutte le funzionalit\u00e0 del Piano Pro</li>
-            <li>\u2713 Software completamente personalizzato</li>
-            <li>\u2713 Flussi di lavoro su misura per la tua azienda</li>
-            <li>\u2713 Supporto dedicato e prioritario</li>
-            <li>\u2713 Integrazioni personalizzate</li>
+            <li>✓ Tutte le funzionalità del Piano Pro</li>
+            <li>✓ Software completamente personalizzato</li>
+            <li>✓ Flussi di lavoro su misura per la tua azienda</li>
+            <li>✓ Supporto dedicato e prioritario</li>
+            <li>✓ Integrazioni personalizzate</li>
           </ul>
           {selectedPlan === "custom" && (
             <div className="border-t pt-4 mt-2">
               <div className="bg-orange-50 rounded-xl p-3 mb-3">
-                <p className="text-xs text-orange-700">\ud83d\udcde Prenota una chiamata gratuita con il nostro team per discutere le tue esigenze e ricevere un preventivo personalizzato.</p>
+                <p className="text-xs text-orange-700">📞 Prenota una chiamata gratuita con il nostro team per discutere le tue esigenze e ricevere un preventivo personalizzato.</p>
               </div>
               <button
                 onClick={handleSubmit}
