@@ -1650,31 +1650,6 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
             <span className="text-green-700 font-bold text-sm">🎉 I primi 14 giorni sono GRATIS!</span>
             <p className="text-green-600 text-xs mt-1">Nessun addebito durante il periodo di prova</p>
           </div>
-          {(selectedPlan === "pro" || selectedPlan === "annual") && (
-            <div className="border-t pt-4 mt-2">
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Codice Promo (opzionale)</label>
-                <input
-                  type="text"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  placeholder="Es: PROVA14"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-                {promoError && <p className="text-red-500 text-xs mt-1">{promoError}</p>}
-              </div>
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="w-full bg-orange-500 text-white font-semibold py-3 rounded-xl hover:bg-orange-600 transition disabled:opacity-50"
-              >
-                {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : (selectedPlan === "annual" ? "Inizia 14 Giorni Gratis - €297/anno" : "Inizia 14 Giorni Gratis - €47/mese")}
-              </button>
-              <p className="text-xs text-center text-gray-400 mt-2">
-                {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi €47/mese" : "Pagamento sicuro tramite Stripe"}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Pro Annuale - VERDE */}
@@ -1739,7 +1714,32 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
           )}
         </div>
 
-        <div className="flex justify-between mt-4">
+
+          {(selectedPlan === "pro" || selectedPlan === "annual") && (
+            <div className="border-t pt-4 mt-2">
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Codice Promo (opzionale)</label>
+                <input
+                  type="text"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                  placeholder="Es: PROVA14"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                {promoError && <p className="text-red-500 text-xs mt-1">{promoError}</p>}
+              </div>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="w-full bg-orange-500 text-white font-semibold py-3 rounded-xl hover:bg-orange-600 transition disabled:opacity-50"
+              >
+                {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : (selectedPlan === "annual" ? "Inizia 14 Giorni Gratis - €297/anno" : "Inizia 14 Giorni Gratis - €47/mese")}
+              </button>
+              <p className="text-xs text-center text-gray-400 mt-2">
+                {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi €47/mese" : "Pagamento sicuro tramite Stripe"}
+              </p>
+            </div>
+          )}        <div className="flex justify-between mt-4">
           <button onClick={onLogout} className="text-sm text-gray-400 hover:text-gray-600">Logout</button>
           {onBack && <button onClick={onBack} className="text-sm text-blue-500 hover:text-blue-700">Indietro</button>}
         </div>
