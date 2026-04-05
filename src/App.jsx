@@ -3352,6 +3352,23 @@ export default function App({ session }) {
   const handleSubscribe = async (promoCode) => {
     let trialDays = 14;
     if (promoCode === "PROVA30") trialDays = 30;
+    // TEST2026: 30 giorni gratis senza carta
+    if (promoCode === "TEST2026") {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+      const { error } = await supabase.from("profiles").update({
+        subscription_status: "trialing",
+        subscription_end: expiresAt.toISOString(),
+      }).eq("id", session.user.id);
+      if (!error) {
+        alert("Codice TEST2026 attivato! Hai 30 giorni gratuiti.");
+        window.location.reload();
+      } else {
+        alert("Errore nell'attivazione del codice.");
+      }
+      return;
+    }
+
     try {
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
