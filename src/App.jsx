@@ -124,11 +124,11 @@ function Header({ currentView, onNavigate, userProfile, onLogout }) {
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Profilo Azienda
               </button>
-              <button onClick={() => { onNavigate("gestione-abbonamento"); }} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 transition-colors">
+              <button onClick={() => { onNavigate("gestione-abbonamento"); setShowMenu(false); }} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 transition-colors">
                 <CreditCard className="w-4 h-4 text-orange-500" />
                 Gestione Abbonamento
               </button>
-              <button onClick={() => { onNavigate("invita-amico"); }} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 transition-colors">
+              <button onClick={() => { onNavigate("invita-amico"); setShowMenu(false); }} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 transition-colors">
                 <Gift className="w-4 h-4 text-orange-500" />
                 Invita un Amico
               </button>
@@ -207,7 +207,7 @@ function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus
       {subscriptionStatus === "trialing" && trialEnd && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center space-y-2">
           <p className="text-sm text-gray-600">Il tuo abbonamento gratuito scadrà il <span className="font-bold text-orange-600">{new Date(trialEnd).toLocaleDateString("it-IT")}</span></p>
-          <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Prova Gratis 14 Giorni — €47/mese →</button>
+          <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Abbonati ora a 47€/mese →</button>
         </div>
       )}
 </div>
@@ -1613,7 +1613,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
       setLoading(false);
       return;
     }
-    onSubscribe(promoCode.toUpperCase());
+    onSubscribe(promoCode.toUpperCase(), selectedPlan);
   };
 
   return (
@@ -1622,14 +1622,14 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">Preventivo Intelligente</h1>
         <p className="text-center text-gray-500 mb-6">Scegli il piano adatto a te</p>
 
-        {/* Piano Pro - ARANCIONE */}
+        {/* Pro Mensile - ARANCIONE */}
         <div
           onClick={() => setSelectedPlan("pro")}
           className={"bg-white rounded-2xl shadow-lg p-6 mb-4 cursor-pointer border-2 transition " + (selectedPlan === "pro" ? "border-orange-500 ring-2 ring-orange-200" : "border-gray-200 hover:border-orange-300")}
         >
           <div className="flex justify-between items-start mb-3">
             <div>
-              <h2 className="text-lg font-bold text-gray-800">Piano Pro</h2>
+              <h2 className="text-lg font-bold text-gray-800">Pro Mensile</h2>
               <p className="text-sm text-gray-500">Per imprenditori edili</p>
             </div>
             <div className="text-right">
@@ -1677,6 +1677,31 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
           )}
         </div>
 
+        {/* Pro Annuale - VERDE */}
+        <div
+          onClick={() => setSelectedPlan("annual")}
+          className={"bg-white rounded-2xl shadow-lg p-6 mb-4 cursor-pointer border-2 transition relative " + (selectedPlan === "annual" ? "border-green-500 ring-2 ring-green-200" : "border-gray-200")}
+        >
+          <div className="absolute -top-3 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">RISPARMIA 47%</div>
+          <div className="flex justify-between items-start mb-3">
+            <div>
+              <h3 className="text-xl font-bold text-gray-800">Pro Annuale</h3>
+              <p className="text-gray-500 text-sm">Per imprenditori edili</p>
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-bold text-green-600">€297</p>
+              <p className="text-gray-500 text-sm">/anno</p>
+              <p className="text-gray-400 text-xs line-through">€564/anno</p>
+            </div>
+          </div>
+          <p className="text-green-600 text-sm font-semibold mb-3">Solo €24,75/mese invece di €47/mese</p>
+          <ul className="space-y-2 text-sm text-gray-600">
+            <li>✔ Tutto quello del Pro Mensile</li>
+            <li>✔ Risparmio di €267 all'anno</li>
+            <li>✔ Supporto prioritario</li>
+          </ul>
+        </div>
+
         {/* Piano Custom - BLU */}
         <div
           onClick={() => setSelectedPlan("custom")}
@@ -1693,7 +1718,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
             </div>
           </div>
           <ul className="text-sm text-gray-600 space-y-1 mb-3">
-            <li>✓ Tutte le funzionalità del Piano Pro</li>
+            <li>✓ Tutte le funzionalità del Pro Mensile</li>
             <li>✓ Software completamente personalizzato</li>
             <li>✓ Flussi di lavoro su misura per la tua azienda</li>
             <li>✓ Supporto dedicato e prioritario</li>
@@ -3349,7 +3374,7 @@ export default function App({ session }) {
 
   const isSubscribed = subscriptionStatus === "active" || subscriptionStatus === "trialing";
 
-  const handleSubscribe = async (promoCode) => {
+  const handleSubscribe = async (promoCode, planType) => {
     let trialDays = 14;
     if (promoCode === "PROVA30") trialDays = 30;
     // TEST2026: 30 giorni gratis senza carta
@@ -3370,7 +3395,7 @@ export default function App({ session }) {
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: session.user.id, email: session.user.email, trialDays }),
+        body: JSON.stringify({ userId: session.user.id, email: session.user.email, trialDays, planType: planType || "pro" }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
