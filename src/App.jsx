@@ -1622,10 +1622,10 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">Preventivo Intelligente</h1>
         <p className="text-center text-gray-500 mb-6">Scegli il piano adatto a te</p>
 
-        {/* Piano Pro */}
+        {/* Piano Pro - ARANCIONE */}
         <div
           onClick={() => setSelectedPlan("pro")}
-          className={"bg-white rounded-2xl shadow-lg p-6 mb-4 cursor-pointer border-2 transition " + (selectedPlan === "pro" ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-blue-300")}
+          className={"bg-white rounded-2xl shadow-lg p-6 mb-4 cursor-pointer border-2 transition " + (selectedPlan === "pro" ? "border-orange-500 ring-2 ring-orange-200" : "border-gray-200 hover:border-orange-300")}
         >
           <div className="flex justify-between items-start mb-3">
             <div>
@@ -1633,7 +1633,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
               <p className="text-sm text-gray-500">Per imprenditori edili</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-blue-600">€47</p>
+              <p className="text-2xl font-bold text-orange-600">€47</p>
               <p className="text-xs text-gray-400">/mese</p>
             </div>
           </div>
@@ -1646,8 +1646,8 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
           </ul>
           {selectedPlan === "pro" && (
             <div className="border-t pt-4 mt-2">
-              <div className="bg-blue-50 rounded-xl p-3 mb-3">
-                <p className="text-xs text-blue-700">✨ Inserisci la carta di credito. Se hai un codice promo, ottieni giorni gratuiti. Al termine della prova, l'abbonamento parte in automatico.</p>
+              <div className="bg-orange-50 rounded-xl p-3 mb-3">
+                <p className="text-xs text-orange-700">✨ Inserisci la carta di credito. Se hai un codice promo, ottieni giorni gratuiti. Al termine della prova, l'abbonamento parte in automatico.</p>
               </div>
               <div className="mb-3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Codice Promo (opzionale)</label>
@@ -1656,14 +1656,14 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value)}
                   placeholder="Es: PROVA14"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
                 {promoError && <p className="text-red-500 text-xs mt-1">{promoError}</p>}
               </div>
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
+                className="w-full bg-orange-500 text-white font-semibold py-3 rounded-xl hover:bg-orange-600 transition disabled:opacity-50"
               >
                 {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : "Abbonati ora - €47/mese"}
               </button>
@@ -1674,10 +1674,10 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
           )}
         </div>
 
-        {/* Piano Custom */}
+        {/* Piano Custom - BLU */}
         <div
           onClick={() => setSelectedPlan("custom")}
-          className={"bg-white rounded-2xl shadow-lg p-6 mb-4 cursor-pointer border-2 transition " + (selectedPlan === "custom" ? "border-orange-500 ring-2 ring-orange-200" : "border-gray-200 hover:border-orange-300")}
+          className={"bg-white rounded-2xl shadow-lg p-6 mb-4 cursor-pointer border-2 transition " + (selectedPlan === "custom" ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-blue-300")}
         >
           <div className="flex justify-between items-start mb-3">
             <div>
@@ -1685,7 +1685,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
               <p className="text-sm text-gray-500">Per aziende che vogliono un software su misura</p>
             </div>
             <div className="text-right">
-              <p className="text-lg font-bold text-orange-600">Su misura</p>
+              <p className="text-lg font-bold text-blue-600">Su misura</p>
               <p className="text-xs text-gray-400">prezzo personalizzato</p>
             </div>
           </div>
@@ -1698,12 +1698,12 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
           </ul>
           {selectedPlan === "custom" && (
             <div className="border-t pt-4 mt-2">
-              <div className="bg-orange-50 rounded-xl p-3 mb-3">
-                <p className="text-xs text-orange-700">📞 Prenota una chiamata gratuita con il nostro team per discutere le tue esigenze e ricevere un preventivo personalizzato.</p>
+              <div className="bg-blue-50 rounded-xl p-3 mb-3">
+                <p className="text-xs text-blue-700">📞 Prenota una chiamata gratuita con il nostro team per discutere le tue esigenze e ricevere un preventivo personalizzato.</p>
               </div>
               <button
                 onClick={handleSubmit}
-                className="w-full bg-orange-500 text-white font-semibold py-3 rounded-xl hover:bg-orange-600 transition"
+                className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition"
               >
                 Prenota una Chiamata Gratuita
               </button>
