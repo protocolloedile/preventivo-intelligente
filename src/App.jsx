@@ -1643,7 +1643,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
             <li>✓ Gestione clienti</li>
             <li>✓ Esportazione PDF professionale</li>
             <li>✓ Costi fissi e margini automatici</li>
-            <li>✓ Supporto 7/7</li>
+            <li>✓ Supporto 7 giorni su 7</li>
             <li>✓ Invio rapido via WhatsApp ed Email</li>
           </ul>
           {selectedPlan === "pro" && (
