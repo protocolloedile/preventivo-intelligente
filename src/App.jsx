@@ -207,7 +207,7 @@ function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus
       {subscriptionStatus === "trialing" && trialEnd && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center space-y-2">
           <p className="text-sm text-gray-600">Il tuo abbonamento gratuito scadrà il <span className="font-bold text-orange-600">{new Date(trialEnd).toLocaleDateString("it-IT")}</span></p>
-          <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Abbonati ora a €47/mese →</button>
+          <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Prova Gratis 14 Giorni — €47/mese →</button>
         </div>
       )}
 </div>
@@ -1646,6 +1646,10 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
             <li>✓ Supporto 7 giorni su 7</li>
             <li>✓ Invio rapido via WhatsApp ed Email</li>
           </ul>
+          <div className="mt-3 mb-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-center">
+            <span className="text-green-700 font-bold text-sm">🎉 I primi 14 giorni sono GRATIS!</span>
+            <p className="text-green-600 text-xs mt-1">Nessun addebito durante il periodo di prova</p>
+          </div>
           {selectedPlan === "pro" && (
             <div className="border-t pt-4 mt-2">
               <div className="mb-3">
@@ -1664,7 +1668,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
                 disabled={loading}
                 className="w-full bg-orange-500 text-white font-semibold py-3 rounded-xl hover:bg-orange-600 transition disabled:opacity-50"
               >
-                {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : "Abbonati ora - €47/mese"}
+                {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : "Inizia 14 Giorni Gratis - €47/mese"}
               </button>
               <p className="text-xs text-center text-gray-400 mt-2">
                 {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi €47/mese" : "Pagamento sicuro tramite Stripe"}
@@ -3346,9 +3350,8 @@ export default function App({ session }) {
   const isSubscribed = subscriptionStatus === "active" || subscriptionStatus === "trialing";
 
   const handleSubscribe = async (promoCode) => {
-    let trialDays = 0;
-    if (promoCode === "PROVA14") trialDays = 14;
-    else if (promoCode === "PROVA30") trialDays = 30;
+    let trialDays = 14;
+    if (promoCode === "PROVA30") trialDays = 30;
     try {
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
