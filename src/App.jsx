@@ -1311,7 +1311,7 @@ function PriceDatabase({ prices, setPrices }) {
   const [selectedCat, setSelectedCat] = useState("Tutte");
 
   const filtered = prices.filter(p => {
-    const matchSearch = p.voce.toLowerCase().includes(search.toLowerCase()) || p.categoria.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = (p.voce || "").toLowerCase().includes(search.toLowerCase()) || (p.categoria || "").toLowerCase().includes(search.toLowerCase());
     const matchCat = selectedCat === "Tutte" || p.categoria === selectedCat;
     return matchSearch && matchCat;
   });
