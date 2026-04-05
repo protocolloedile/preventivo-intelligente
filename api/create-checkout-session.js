@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { userId, email, trialDays } = req.body;
+    const { userId, email, trialDays, planType } = req.body;
 
     const sessionConfig = {
       payment_method_types: ["card"],
@@ -26,11 +26,11 @@ export default async function handler(req, res) {
           price_data: {
             currency: "eur",
             product_data: {
-              name: "Preventivo Intelligente - Piano Pro",
+              name: planType === "annual" ? "Preventivo Intelligente - Pro Annuale" : "Preventivo Intelligente - Pro Mensile",
               description: "Accesso completo a tutte le funzionalità",
             },
-            unit_amount: 4700,
-            recurring: { interval: "month" },
+            unit_amount: planType === "annual" ? 29700 : 4700,
+            recurring: { interval: planType === "annual" ? "year" : "month" },
           },
           quantity: 1,
         },
