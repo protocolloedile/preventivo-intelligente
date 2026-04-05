@@ -1643,12 +1643,11 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
             <li>✓ Gestione clienti</li>
             <li>✓ Esportazione PDF professionale</li>
             <li>✓ Costi fissi e margini automatici</li>
+            <li>✓ Supporto 7/7</li>
+            <li>✓ Invio rapido via WhatsApp ed Email</li>
           </ul>
           {selectedPlan === "pro" && (
             <div className="border-t pt-4 mt-2">
-              <div className="bg-orange-50 rounded-xl p-3 mb-3">
-                <p className="text-xs text-orange-700">✨ Inserisci la carta di credito. Se hai un codice promo, ottieni giorni gratuiti. Al termine della prova, l'abbonamento parte in automatico.</p>
-              </div>
               <div className="mb-3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Codice Promo (opzionale)</label>
                 <input
