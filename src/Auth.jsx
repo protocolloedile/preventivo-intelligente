@@ -147,7 +147,7 @@ export default function Auth() {
         <div className="text-center mb-6">
           <div className="text-5xl mb-3">🏗️</div>
           <h1 className="text-2xl font-bold text-gray-800">Preventivo Intelligente</h1>
-          <p className="text-gray-500 text-sm mt-1">Crea preventivi edili professionali con l'AI</p>
+          <p className="text-gray-500 text-sm mt-1">Crea preventivi professionali in 30 secondi usando l'AI</p>
         {mode === "register" && (
           <div className="mt-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
             <p className="text-green-700 font-bold text-sm text-center">
