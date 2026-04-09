@@ -3377,29 +3377,20 @@ export default function App({ session }) {
   const handleSubscribe = async (promoCode, planType) => {
     let trialDays = 14;
     if (promoCode === "PROVA30") trialDays = 30;
-    // Se c'è un codice promo, attiva trial direttamente senza carta
-    if (promoCode) {
-      const { error } = await supabase.from("profiles").update({
-        subscription_status: "trialing"
-      }).eq("id", session.user.id);
-      if (!error) {
+    // Attiva trial gratuito direttamente su Supabase (senza carta)
+    const { error } = await supabase.from("profiles").update({
+      subscription_status: "trialing"
+    }).eq("id", session.user.id);
+    if (!error) {
+      if (promoCode) {
         alert("Codice " + promoCode + " attivato! Hai " + trialDays + " giorni gratuiti.");
-        window.location.reload();
       } else {
-        alert("Errore: " + error.message);
+        alert("Prova gratuita attivata! Hai 14 giorni per provare tutte le funzionalit\u00E0.");
       }
-      return;
+      window.location.reload();
+    } else {
+      alert("Errore: " + error.message);
     }
-
-    try {
-      const res = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: session.user.id, email: session.user.email, trialDays, planType: planType || "pro" }),
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch (err) { console.error(err); }
   };
 
   if (dataLoaded && (!isSubscribed || showPricing)) {
