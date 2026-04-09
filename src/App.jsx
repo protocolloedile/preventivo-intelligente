@@ -3377,13 +3377,13 @@ export default function App({ session }) {
   const handleSubscribe = async (promoCode, planType) => {
     let trialDays = 14;
     if (promoCode === "PROVA30") trialDays = 30;
-    // TEST2026: 30 giorni gratis senza carta
-    if (promoCode === "TEST2026") {
+    // Se c'è un codice promo, attiva trial direttamente senza carta
+    if (promoCode) {
       const { error } = await supabase.from("profiles").update({
         subscription_status: "trialing"
       }).eq("id", session.user.id);
       if (!error) {
-        alert("Codice TEST2026 attivato! Hai 30 giorni gratuiti.");
+        alert("Codice " + promoCode + " attivato! Hai " + trialDays + " giorni gratuiti.");
         window.location.reload();
       } else {
         alert("Errore: " + error.message);
