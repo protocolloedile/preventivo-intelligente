@@ -3380,7 +3380,8 @@ export default function App({ session }) {
       if (promoCode === "ANNO365GRATIS") trialDays = 365;
     // Attiva trial gratuito direttamente su Supabase (senza carta)
     const { error } = await supabase.from("profiles").update({
-      subscription_status: "trialing"
+      subscription_status: "trialing",
+      trial_end: new Date(Date.now() + trialDays * 86400000).toISOString()
     }).eq("id", session.user.id);
     if (!error) {
       if (promoCode) {
