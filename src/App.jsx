@@ -617,7 +617,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
   // Calcolo IVA mista per aliquota
   const ivaPerAliquota = {};
   items.forEach(item => {
-    const aliquota = item.iva || 22;
+    const aliquota = item.iva ?? 22;
     const importoVoce = item.quantita * item.prezzo;
     if (!ivaPerAliquota[aliquota]) ivaPerAliquota[aliquota] = 0;
     ivaPerAliquota[aliquota] += importoVoce;
@@ -913,7 +913,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                   <button
                     key={p.id}
                     onClick={() => {
-                      setItems([...items, { voce: p.voce, categoria: p.categoria, unita: p.unita, quantita: 1, prezzo: p.prezzo, costoInterno: p.costoInterno || 0, iva: p.iva || 22 }]);
+                      setItems([...items, { voce: p.voce, categoria: p.categoria, unita: p.unita, quantita: 1, prezzo: p.prezzo, costoInterno: p.costoInterno || 0, iva: p.iva ?? 22 }]);
                       setShowDBPicker(false);
                       setDbSearch("");
                     }}
@@ -921,7 +921,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                   >
                     <div>
                       <p className="text-sm font-medium text-gray-800">{p.voce}</p>
-                      <p className="text-[10px] text-gray-400">{p.categoria} · {p.unita} · IVA {p.iva || 22}%</p>
+                      <p className="text-[10px] text-gray-400">{p.categoria} · {p.unita} · IVA {p.iva ?? 22}%</p>
                     </div>
                     <span className="text-xs font-semibold text-orange-600">€ {p.prezzo}</span>
                   </button>
@@ -964,7 +964,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                         <option value="corpo">corpo</option>
                       </select>
                       <select
-                        value={item.iva || 22}
+                        value={item.iva ?? 22}
                         onChange={(e) => updateItem(i, "iva", parseInt(e.target.value))}
                         className="text-gray-400 text-xs bg-transparent border-b border-dashed border-gray-300 focus:outline-none"
                       >
@@ -1305,7 +1305,7 @@ function PriceDatabase({ prices, setPrices }) {
   const [editValues, setEditValues] = useState({});
   const [showAdd, setShowAdd] = useState(false);
   const [newItem, setNewItem] = useState({ categoria: "", voce: "", unita: "mq", costoInterno: 0, prezzo: 0, note: "", iva: 22 });
-  const ivaOptions = [4, 10, 22];
+  const ivaOptions = [0, 4, 10, 22];
 
   const categories = [...new Set(prices.map(p => p.categoria))];
   const [selectedCat, setSelectedCat] = useState("Tutte");
@@ -1318,7 +1318,7 @@ function PriceDatabase({ prices, setPrices }) {
 
   const startEdit = (item) => {
     setEditingId(item.id);
-    setEditValues({ costoInterno: item.costoInterno, prezzo: item.prezzo, note: item.note, iva: item.iva || 22 });
+    setEditValues({ costoInterno: item.costoInterno, prezzo: item.prezzo, note: item.note, iva: item.iva ?? 22 });
   };
 
   const saveEdit = (id) => {
@@ -1446,7 +1446,7 @@ function PriceDatabase({ prices, setPrices }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-sm text-gray-800">{item.voce}</p>
-                  <p className="text-xs text-gray-400">{item.categoria} · {item.note} · <span className="text-orange-500">IVA {item.iva || 22}%</span></p>
+                  <p className="text-xs text-gray-400">{item.categoria} · {item.note} · <span className="text-orange-500">IVA {item.iva ?? 22}%</span></p>
                   <p className="text-xs text-gray-500 mt-1">Costo: €{item.costoInterno} → Vendita: €{item.prezzo} · Margine: {item.prezzo > 0 ? ((item.prezzo-item.costoInterno)/item.prezzo*100).toFixed(0) : 0}%</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1848,7 +1848,7 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit, onDuplicate }) 
   // IVA mista
   const ivaPerAliquota = {};
   (quote.items || []).forEach(item => {
-    const aliquota = item.iva || 22;
+    const aliquota = item.iva ?? 22;
     const importoVoce = item.quantita * item.prezzo;
     if (!ivaPerAliquota[aliquota]) ivaPerAliquota[aliquota] = 0;
     ivaPerAliquota[aliquota] += importoVoce;
@@ -2419,7 +2419,7 @@ const startModifyRecording = () => {
     const proporzione = subtotale > 0 ? subtotaleScontato / subtotale : 1;
     let ivaTotal = 0;
     items.forEach(item => {
-      const aliquota = item.iva || 22;
+      const aliquota = item.iva ?? 22;
       const importoVoce = item.quantita * item.prezzo;
       ivaTotal += (importoVoce * proporzione) * (aliquota / 100);
     });
@@ -2608,7 +2608,7 @@ function generatePDF(quote, userProfile, returnBlob = false) {
   // IVA mista per il PDF
   const ivaPerAliquotaPDF = {};
   (quote.items || []).forEach(item => {
-    const aliquota = item.iva || 22;
+    const aliquota = item.iva ?? 22;
     const importoVoce = item.quantita * item.prezzo;
     if (!ivaPerAliquotaPDF[aliquota]) ivaPerAliquotaPDF[aliquota] = 0;
     ivaPerAliquotaPDF[aliquota] += importoVoce;
@@ -2640,7 +2640,7 @@ function generatePDF(quote, userProfile, returnBlob = false) {
         <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:center;">${item.quantita}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:center;">${item.unita}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:right;">€ ${fmt(item.prezzo)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:center;">${item.iva || 22}%</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:center;">${item.iva ?? 22}%</td>
         <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#1F2937;text-align:right;font-weight:600;">€ ${fmt(item.quantita * item.prezzo)}</td>
       </tr>`;
     });
