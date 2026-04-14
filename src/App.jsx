@@ -3379,6 +3379,12 @@ export default function App({ session }) {
     if (promoCode === "PROVA30") trialDays = 30;
       if (promoCode === "ANNO365GRATIS") trialDays = 365;
     // Attiva trial gratuito direttamente su Supabase (senza carta)
+    // Controlla se l'utente ha già usato un codice promo
+    const { data: currentProfile } = await supabase.from("profiles").select("subscription_status").eq("id", session.user.id).single();
+    if (currentProfile && (currentProfile.subscription_status === "trialing" || currentProfile.subscription_status === "active")) {
+      alert("Hai già utilizzato un codice promozionale o hai un abbonamento attivo.");
+      return;
+    }
     const { error } = await supabase.from("profiles").update({
       subscription_status: "trialing",
       trial_end: new Date(Date.now() + trialDays * 86400000).toISOString()
