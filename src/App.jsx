@@ -1607,7 +1607,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
     }
     setPromoError("");
     setLoading(true);
-    const validCodes = ["PROVA14", "PROVA30", "TEST2026"];
+    const validCodes = ["PROVA14", "PROVA30", "TEST2026", "ANNO365GRATIS"];
     if (promoCode && !validCodes.includes(promoCode.toUpperCase())) {
       setPromoError("Codice promo non valido");
       setLoading(false);
@@ -1736,7 +1736,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
                 {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : (selectedPlan === "annual" ? "Inizia 14 Giorni Gratis - €297/anno" : "Inizia 14 Giorni Gratis - €47/mese")}
               </button>
               <p className="text-xs text-center text-gray-400 mt-2">
-                {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi €47/mese" : "Pagamento sicuro tramite Stripe"}
+                {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "ANNO365GRATIS" ? "365 giorni gratis!" : "Pagamento sicuro tramite Stripe"}
               </p>
             </div>
           )}        <div className="flex justify-between mt-4">
@@ -3377,6 +3377,7 @@ export default function App({ session }) {
   const handleSubscribe = async (promoCode, planType) => {
     let trialDays = 14;
     if (promoCode === "PROVA30") trialDays = 30;
+      if (promoCode === "ANNO365GRATIS") trialDays = 365;
     // Attiva trial gratuito direttamente su Supabase (senza carta)
     const { error } = await supabase.from("profiles").update({
       subscription_status: "trialing"
