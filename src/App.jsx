@@ -224,6 +224,7 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
     telefono: userProfile?.telefono || "",
     indirizzo: userProfile?.indirizzo || "",
     piva: userProfile?.piva || "",
+    codiceFiscale: userProfile?.codiceFiscale || "",
     logo: userProfile?.logo || ""
   });
   const [saved, setSaved] = useState(false);
@@ -338,6 +339,12 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
           value={form.piva}
           onChange={e => setForm(f => ({ ...f, piva: e.target.value }))}
           placeholder="Partita IVA"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
+        />
+        <input
+          value={form.codiceFiscale}
+          onChange={e => setForm(f => ({ ...f, codiceFiscale: e.target.value.toUpperCase() }))}
+          placeholder="Codice Fiscale"
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
         />
         <input
@@ -1600,20 +1607,18 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState("pro");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selectedPlan === "custom") {
       window.open("https://calendar.app.google/ymhcaEWt46ew6yDV9", "_blank");
       return;
     }
     setPromoError("");
     setLoading(true);
-    const validCodes = ["PROVA14", "PROVA30", "TEST2026", "ANNO365GRATIS"];
-    if (promoCode && !validCodes.includes(promoCode.toUpperCase())) {
-      setPromoError("Codice promo non valido");
+    const result = await onSubscribe(promoCode.toUpperCase(), selectedPlan);
+    if (result?.error) {
+      setPromoError(result.error);
       setLoading(false);
-      return;
     }
-    onSubscribe(promoCode.toUpperCase(), selectedPlan);
   };
 
   return (
@@ -1736,7 +1741,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
                 {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : (selectedPlan === "annual" ? "Inizia 14 Giorni Gratis - €297/anno" : "Inizia 14 Giorni Gratis - €47/mese")}
               </button>
               <p className="text-xs text-center text-gray-400 mt-2">
-                {promoCode.toUpperCase() === "PROVA14" ? "14 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "PROVA30" ? "30 giorni gratis, poi €47/mese" : promoCode.toUpperCase() === "ANNO365GRATIS" ? "365 giorni gratis!" : "Pagamento sicuro tramite Stripe"}
+                {promoCode ? "Il codice verrà verificato all'attivazione" : "Pagamento sicuro tramite Stripe"}
               </p>
             </div>
           )}        <div className="flex justify-between mt-4">
@@ -3208,6 +3213,7 @@ export default function App({ session }) {
             telefono: profileData.telefono || "",
             indirizzo: profileData.indirizzo || "",
             piva: profileData.piva || "",
+            codiceFiscale: profileData.codice_fiscale || "",
             logo: profileData.logo || "",
           });
         // Carica stato abbonamento
@@ -3273,7 +3279,7 @@ export default function App({ session }) {
     setUserProfile(profile);
     await supabase.from("profiles").upsert({
       id: session.user.id, nome: profile.nome, cognome: profile.cognome, nome_azienda: profile.nomeAzienda, email: profile.email,
-      telefono: profile.telefono, indirizzo: profile.indirizzo, piva: profile.piva,
+      telefono: profile.telefono, indirizzo: profile.indirizzo, piva: profile.piva, codice_fiscale: profile.codiceFiscale,
       logo: profile.logo, updated_at: new Date().toISOString(),
     });
   };
@@ -3375,29 +3381,27 @@ export default function App({ session }) {
   const isSubscribed = subscriptionStatus === "active" || subscriptionStatus === "trialing";
 
   const handleSubscribe = async (promoCode, planType) => {
-    let trialDays = 14;
-    if (promoCode === "PROVA30") trialDays = 30;
-      if (promoCode === "ANNO365GRATIS") trialDays = 365;
-    // Attiva trial gratuito direttamente su Supabase (senza carta)
-    // Controlla se l'utente ha già usato un codice promo
-    const { data: currentProfile } = await supabase.from("profiles").select("subscription_status").eq("id", session.user.id).single();
-    if (currentProfile && (currentProfile.subscription_status === "trialing" || currentProfile.subscription_status === "active")) {
-      alert("Hai già utilizzato un codice promozionale o hai un abbonamento attivo.");
-      return;
-    }
-    const { error } = await supabase.from("profiles").update({
-      subscription_status: "trialing",
-      trial_end: new Date(Date.now() + trialDays * 86400000).toISOString()
-    }).eq("id", session.user.id);
-    if (!error) {
+    try {
+      const res = await fetch("/api/activate-promo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + session.access_token
+        },
+        body: JSON.stringify({ promoCode: promoCode || undefined })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { error: data.error || "Errore attivazione prova" };
+      }
       if (promoCode) {
-        alert("Codice " + promoCode + " attivato! Hai " + trialDays + " giorni gratuiti.");
+        alert("Codice " + promoCode + " attivato! Hai " + data.trialDays + " giorni gratuiti.");
       } else {
-        alert("Prova gratuita attivata! Hai 14 giorni per provare tutte le funzionalit\u00E0.");
+        alert("Prova gratuita attivata! Hai " + data.trialDays + " giorni per provare tutte le funzionalit\u00E0.");
       }
       window.location.reload();
-    } else {
-      alert("Errore: " + error.message);
+    } catch (err) {
+      return { error: err.message };
     }
   };
 
