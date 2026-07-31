@@ -195,7 +195,7 @@ function Header({ currentView, onNavigate, userProfile, onLogout }) {
 function HomeView({ onNavigate, onGoToNuovo, stats, userProfile, trialEnd, subscriptionStatus, onShowPricing }) {
   const nomeUtente = userProfile?.nome ? userProfile.nome : "";
   return (
-    <div className="p-5 md:p-8 space-y-5 md:max-w-5xl">
+    <div className="p-5 md:p-8 space-y-5 md:max-w-5xl md:mx-auto">
       <div className="text-center md:text-left py-4 md:py-0">
         <h2 className="text-2xl font-bold text-gray-800">{nomeUtente ? `Ciao ${nomeUtente}! 👋` : "Ciao! 👋"}</h2>
         <p className="text-gray-500 mt-1">Cosa vuoi fare oggi?</p>
