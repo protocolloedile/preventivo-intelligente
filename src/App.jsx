@@ -100,6 +100,54 @@ async function parseVoiceToQuote(transcript, priceDB, pastQuotes) {
 
 const LOGO_BASE64 = "data:image/png;base64,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";
 
+function Sidebar({ currentView, onNavigate, onGoToNuovo, userProfile, onLogout }) {
+  const nomeAzienda = userProfile?.nomeAzienda || "Protocollo Edile";
+  const navItems = [
+    { key: "home", label: "Home", icon: Home },
+    { key: "nuovo", label: "Nuovo Preventivo", icon: Mic, action: onGoToNuovo },
+    { key: "database", label: "Prezzi", icon: Database },
+    { key: "clienti", label: "Clienti", icon: Users },
+    { key: "storico", label: "Storico", icon: FileText },
+    { key: "costifissi", label: "Costi Fissi", icon: Building2 },
+  ];
+  const bottomItems = [
+    { key: "profilo", label: "Profilo Azienda", icon: User },
+    { key: "gestione-abbonamento", label: "Abbonamento", icon: CreditCard },
+    { key: "invita-amico", label: "Invita un Amico", icon: Gift },
+  ];
+  const isActive = (key) => currentView === key || (key === "nuovo" && currentView === "modifica") || (key === "storico" && currentView === "dettaglio");
+  const itemClass = (key) => "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-left " + (isActive(key) ? "bg-orange-50 text-orange-600" : "text-gray-600 hover:bg-gray-50");
+  return (
+    <aside className="hidden md:flex md:flex-col md:w-64 md:shrink-0 bg-white border-r border-gray-200 min-h-screen sticky top-0 self-start">
+      <div className="p-5 flex items-center gap-3 border-b border-gray-100">
+        <img src={LOGO_BASE64} alt="Logo" className="w-10 h-10 rounded-lg object-contain bg-orange-50 p-1" />
+        <div className="min-w-0">
+          <p className="font-bold text-gray-800 text-sm leading-tight">Preventivo Intelligente</p>
+          <p className="text-xs text-gray-400 truncate">{nomeAzienda}</p>
+        </div>
+      </div>
+      <nav className="flex-1 p-3 space-y-1">
+        {navItems.map(item => (
+          <button key={item.key} onClick={() => item.action ? item.action() : onNavigate(item.key)} className={itemClass(item.key)}>
+            <item.icon size={18} />
+            {item.label}
+          </button>
+        ))}
+      </nav>
+      <div className="p-3 border-t border-gray-100 space-y-1">
+        {bottomItems.map(item => (
+          <button key={item.key} onClick={() => onNavigate(item.key)} className={itemClass(item.key)}>
+            <item.icon size={18} />
+            {item.label}
+          </button>
+        ))}
+        <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition text-left">
+          <LogOut size={18} /> Esci
+        </button>
+      </div>
+    </aside>
+  );
+}
 function Header({ currentView, onNavigate, userProfile, onLogout }) {
   const logoSrc = LOGO_BASE64;
   const nomeAzienda = userProfile?.nomeAzienda || "Protocollo Edile";
@@ -114,7 +162,7 @@ function Header({ currentView, onNavigate, userProfile, onLogout }) {
             <p className="text-xs opacity-80">Crea preventivi professionali con l'AI</p>
           </div>
         </div>
-        <div className="relative">
+        <div className="relative md:hidden">
           <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-white/20 rounded-lg transition" title="Menu">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </button>
@@ -144,24 +192,16 @@ function Header({ currentView, onNavigate, userProfile, onLogout }) {
     </div>
   );
 }
-function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus, onShowPricing }) {
+function HomeView({ onNavigate, onGoToNuovo, stats, userProfile, trialEnd, subscriptionStatus, onShowPricing }) {
   const nomeUtente = userProfile?.nome ? userProfile.nome : "";
   return (
-    <div className="p-5 space-y-5">
-      <div className="text-center py-4">
+    <div className="p-5 md:p-8 space-y-5 md:max-w-5xl">
+      <div className="text-center md:text-left py-4 md:py-0">
         <h2 className="text-2xl font-bold text-gray-800">{nomeUtente ? `Ciao ${nomeUtente}! 👋` : "Ciao! 👋"}</h2>
         <p className="text-gray-500 mt-1">Cosa vuoi fare oggi?</p>
       </div>
 
-      <button onClick={() => {
-        const p = userProfile || {};
-        if (!p.nome || !p.cognome || !p.nomeAzienda || !p.piva || !p.email || !p.telefono || !p.indirizzo) {
-          alert("Completa il tuo profilo prima di creare un preventivo. Vai su Profilo Azienda e compila tutti i campi obbligatori (Nome, Cognome, Nome Azienda, P.IVA, Email, Telefono, Indirizzo).");
-          onNavigate("profilo");
-          return;
-        }
-        onNavigate("nuovo");
-      }} className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white p-5 rounded-2xl flex items-center gap-4 shadow-lg hover:shadow-xl transition transform hover:scale-[1.02] active:scale-[0.98]">
+      <button onClick={onGoToNuovo} className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white p-5 md:p-6 rounded-2xl flex items-center gap-4 shadow-lg hover:shadow-xl transition transform hover:scale-[1.01] active:scale-[0.98]">
         <div className="bg-white/20 p-3 rounded-xl">
           <Mic size={28} />
         </div>
@@ -172,45 +212,47 @@ function HomeView({ onNavigate, stats, userProfile, trialEnd, subscriptionStatus
         <ChevronRight size={20} className="ml-auto" />
       </button>
 
-      <div className="grid grid-cols-2 gap-3">
-        <button onClick={() => onNavigate("database")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 transition">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <button onClick={() => onNavigate("database")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 hover:shadow-md transition">
           <Database size={22} className="text-orange-500 mb-2" />
           <p className="font-semibold text-gray-800 text-xs">Prezzi</p>
           <p className="text-gray-400 text-xs mt-0.5">{stats.totalPrices} voci</p>
         </button>
-        <button onClick={() => onNavigate("clienti")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 transition">
+        <button onClick={() => onNavigate("clienti")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 hover:shadow-md transition">
           <Users size={22} className="text-orange-500 mb-2" />
           <p className="font-semibold text-gray-800 text-xs">Clienti</p>
           <p className="text-gray-400 text-xs mt-0.5">{stats.totalClients} clienti</p>
         </button>
-        <button onClick={() => onNavigate("storico")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 transition">
+        <button onClick={() => onNavigate("storico")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 hover:shadow-md transition">
           <FileText size={22} className="text-orange-500 mb-2" />
           <p className="font-semibold text-gray-800 text-xs">Storico</p>
           <p className="text-gray-400 text-xs mt-0.5">{stats.totalQuotes} prev.</p>
         </button>
-        <button onClick={() => onNavigate("costifissi")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 transition">
+        <button onClick={() => onNavigate("costifissi")} className="bg-white border-2 border-gray-100 p-4 rounded-2xl text-left hover:border-orange-200 hover:shadow-md transition">
           <Building2 size={22} className="text-orange-500 mb-2" />
           <p className="font-semibold text-gray-800 text-xs">Costi Fissi</p>
           <p className="text-gray-400 text-xs mt-0.5">€ {stats.costoMensile?.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0"}/mese</p>
         </button>
       </div>
 
-      <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4">
-        <p className="text-orange-800 font-semibold text-sm">💡 Come funziona</p>
-        <ol className="text-orange-700 text-xs mt-2 space-y-1">
-          <li>1. Premi il microfono e descrivi il lavoro</li>
-          <li>2. L'AI analizza e genera il preventivo</li>
-          <li>3. Modifica se serve, poi scarica il PDF</li>
-        </ol>
-      </div>
-    
-      {subscriptionStatus === "trialing" && trialEnd && (
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center space-y-2">
-          <p className="text-sm text-gray-600">Il tuo abbonamento gratuito scadrà il <span className="font-bold text-orange-600">{new Date(trialEnd).toLocaleDateString("it-IT")}</span></p>
-          <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Abbonati ora a 47€/mese →</button>
+      <div className="md:grid md:grid-cols-2 md:gap-4 md:space-y-0 space-y-5">
+        <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4">
+          <p className="text-orange-800 font-semibold text-sm">💡 Come funziona</p>
+          <ol className="text-orange-700 text-xs mt-2 space-y-1">
+            <li>1. Premi il microfono e descrivi il lavoro</li>
+            <li>2. L'AI analizza e genera il preventivo</li>
+            <li>3. Modifica se serve, poi scarica il PDF</li>
+          </ol>
         </div>
-      )}
-</div>
+
+        {subscriptionStatus === "trialing" && trialEnd && (
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center space-y-2 flex flex-col justify-center">
+            <p className="text-sm text-gray-600">Il tuo abbonamento gratuito scadrà il <span className="font-bold text-orange-600">{new Date(trialEnd).toLocaleDateString("it-IT")}</span></p>
+            <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Abbonati ora a 47€/mese →</button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -250,7 +292,6 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
       return;
     }
     setUserProfile({ ...form });
-          setSubscriptionStatus(profileData.subscription_status || "none");
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -261,7 +302,7 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
   };
 
   return (
-    <div className="p-5 space-y-4">
+    <div className="p-5 md:p-8 space-y-4 md:max-w-2xl md:mx-auto">
       <button onClick={() => onNavigate("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2">
         <ArrowLeft size={20} />
         <span className="text-sm">Indietro</span>
@@ -1346,7 +1387,7 @@ function PriceDatabase({ prices, setPrices }) {
   };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 md:p-8 space-y-4 md:max-w-4xl md:mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-bold text-gray-800 text-lg">Database Prezzi</h2>
@@ -1534,7 +1575,7 @@ function ClientDatabase({ clients, setClients }) {
   };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 md:p-8 space-y-4 md:max-w-4xl md:mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-bold text-gray-800 text-lg">Database Clienti</h2>
@@ -1870,7 +1911,7 @@ function QuoteDetailView({ quote, onBack, onDownloadPDF, onEdit, onDuplicate }) 
   const totale = quote.totale || subtotaleScontato + ivaTotal;
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 md:p-8 space-y-4 md:max-w-2xl md:mx-auto">
       <div className="flex items-center gap-3">
         <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-lg transition">
           <ArrowLeft size={18} className="text-gray-500" />
@@ -2062,7 +2103,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
   const costoGiornaliero = costoMensile / 22;
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 md:p-8 space-y-4 md:max-w-2xl md:mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-bold text-gray-800 text-lg">Costi Fissi</h2>
@@ -2206,7 +2247,7 @@ function StoricoView({ quotes, onViewQuote, onDeleteQuote }) {
     );
   }
   return (
-    <div className="p-4 space-y-3">
+    <div className="p-4 md:p-8 space-y-3 md:max-w-3xl md:mx-auto">
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-gray-800 text-lg">Storico Preventivi</h2>
         <button onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)} className={"text-xs font-medium px-3 py-1 rounded-lg transition " + (selectMode ? "bg-gray-200 text-gray-700" : "bg-orange-100 text-orange-600")}>
@@ -2458,7 +2499,7 @@ const startModifyRecording = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 md:p-8 md:max-w-3xl md:mx-auto">
       {step === "voice" && (
         <div className="space-y-4">
           <div>
@@ -3203,7 +3244,20 @@ export default function App({ session }) {
 
     const loadData = async () => {
       try {
-        const { data: profileData } = await supabase.from("profiles").select("*").eq("id", userId).single();
+        let { data: profileData } = await supabase.from("profiles").select("*").eq("id", userId).single();
+        if (!profileData) {
+          const meta = session.user.user_metadata || {};
+          const { data: createdProfile, error: createError } = await supabase.from("profiles").upsert({
+            id: userId,
+            nome: meta.nome || "",
+            cognome: meta.cognome || "",
+            nome_azienda: meta.nome_azienda || "",
+            email: session.user.email || "",
+            subscription_status: "none"
+          }).select().single();
+          if (createError) console.error("Profile create error:", createError);
+          profileData = createdProfile;
+        }
         if (profileData) {
           setUserProfile({
             nome: profileData.nome || "",
@@ -3405,16 +3459,28 @@ export default function App({ session }) {
     }
   };
 
+  const goToNuovoPreventivo = () => {
+    const p = userProfile || {};
+    if (!p.nome || !p.cognome || !p.nomeAzienda || !p.piva || !p.email || !p.telefono || !p.indirizzo) {
+      alert("Completa il tuo profilo prima di creare un preventivo. Vai su Profilo Azienda e compila tutti i campi obbligatori (Nome, Cognome, Nome Azienda, P.IVA, Email, Telefono, Indirizzo).");
+      setCurrentView("profilo");
+      return;
+    }
+    setCurrentView("nuovo");
+  };
+
   if (dataLoaded && (!isSubscribed || showPricing)) {
     return <PricingPage onSubscribe={handleSubscribe} onLogout={handleLogout} onBack={showPricing ? () => setShowPricing(false) : null} userEmail={session?.user?.email} />;
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen flex items-start justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-y-auto">
+    <div className="bg-gray-100 min-h-screen md:flex">
+      <Sidebar currentView={currentView} onNavigate={setCurrentView} onGoToNuovo={goToNuovoPreventivo} userProfile={userProfile} onLogout={handleLogout} />
+      <div className="flex-1 flex items-start justify-center p-4 md:p-0">
+      <div className="w-full max-w-md md:max-w-none bg-white rounded-2xl md:rounded-none shadow-xl md:shadow-none overflow-y-auto md:min-h-screen">
         <Header currentView={currentView} onNavigate={setCurrentView} userProfile={userProfile} onLogout={handleLogout} />
 
-        {currentView === "home" && <HomeView onNavigate={setCurrentView} stats={stats} userProfile={userProfile} trialEnd={trialEnd} subscriptionStatus={subscriptionStatus} onShowPricing={() => setShowPricing(true)} />}
+        {currentView === "home" && <HomeView onNavigate={setCurrentView} onGoToNuovo={goToNuovoPreventivo} stats={stats} userProfile={userProfile} trialEnd={trialEnd} subscriptionStatus={subscriptionStatus} onShowPricing={() => setShowPricing(true)} />}
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
       {currentView === "gestione-abbonamento" && <GestioneAbbonamento onNavigate={(v) => setCurrentView(v)} subscriptionStatus={subscriptionStatus} trialEnd={trialEnd} onShowPricing={() => setShowPricing(true)} onCancelSubscription={() => setSubscriptionStatus("expired")} session={session} />}
       {currentView === "invita-amico" && <InvitaAmico onNavigate={(v) => setCurrentView(v)} session={session} referralCode={referralCode} referrals={referrals} />}
@@ -3452,6 +3518,7 @@ export default function App({ session }) {
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

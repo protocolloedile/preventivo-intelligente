@@ -63,19 +63,18 @@ export default function Auth() {
     }
     setLoading(true);
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            nome: regNome.trim(),
+            cognome: regCognome.trim(),
+            nome_azienda: regAzienda.trim()
+          }
+        }
+      });
       if (signUpError) throw signUpError;
-      if (data?.user) {
-        const { error: profileError } = await supabase.from("profiles").upsert({
-          id: data.user.id,
-          nome: regNome.trim(),
-          cognome: regCognome.trim(),
-          nome_azienda: regAzienda.trim(),
-          email: email.trim(),
-          subscription_status: "none"
-        });
-        if (profileError) console.error("Profile save error:", profileError);
-      }
       setMessage("Registrazione completata! Controlla la tua email per confermare l'account.");
       setMode("login");
     } catch (err) {
