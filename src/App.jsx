@@ -265,6 +265,14 @@ const costoToDb = (c, userId) => ({
   user_id: userId, categoria: c.categoria || "", voce: c.voce || "",
   importo: Number(c.importo) || 0, frequenza: c.frequenza === "annuale" ? "annuale" : "mensile", note: c.note || "",
 });
+const clientFromDb = (row) => ({
+  id: row.id, _dbId: row.id, nome: row.nome || "", codiceFiscale: row.codice_fiscale || "", indirizzo: row.indirizzo || "",
+  telefono: row.telefono || "", whatsapp: row.telefono || "", email: row.email || "", note: row.note || "",
+});
+const clientToDb = (c, userId) => ({
+  user_id: userId, nome: c.nome || "", codice_fiscale: c.codiceFiscale || "", indirizzo: c.indirizzo || "",
+  telefono: c.whatsapp || c.telefono || "", email: c.email || "", note: c.note || "",
+});
 
 // Le voci inserite insieme hanno lo stesso created_at: a parità di data ordina per categoria e nome.
 const sortDbRows = (rows) => [...rows].sort((a, b) =>
@@ -679,6 +687,57 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
   );
 }
 
+const CAMPI_CLIENTE = ["nome", "indirizzo", "telefono", "email", "codiceFiscale"];
+
+const clientDaAnagrafica = (c) => ({
+  nome: c.nome || "", indirizzo: c.indirizzo || "", telefono: c.telefono || c.whatsapp || "",
+  email: c.email || "", codiceFiscale: c.codiceFiscale || "", tipo: c.tipo || "Privato",
+});
+
+function NumberInput({ value, onChange, onFocus, onBlur, ...props }) {
+  const toText = (v) => (v === "" || v === null || v === undefined || Number.isNaN(Number(v)) ? "" : String(v));
+  const [text, setText] = useState(toText(value));
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) setText(toText(value));
+  }, [value, focused]);
+
+  const toNumber = (t) => {
+    const n = parseFloat(t);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  return (
+    <input
+      {...props}
+      type="text"
+      inputMode="decimal"
+      value={text}
+      onFocus={(e) => {
+        setFocused(true);
+        e.target.select();
+        onFocus?.(e);
+      }}
+      onChange={(e) => {
+        let t = e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "");
+        const dot = t.indexOf(".");
+        if (dot !== -1) t = t.slice(0, dot + 1) + t.slice(dot + 1).replace(/\./g, "");
+        t = t.replace(/^0+(?=\d)/, "");
+        setText(t);
+        onChange(toNumber(t));
+      }}
+      onBlur={(e) => {
+        const n = toNumber(text);
+        setText(String(n));
+        setFocused(false);
+        onChange(n);
+        onBlur?.(e);
+      }}
+    />
+  );
+}
+
 function VoiceRecorder({ onTranscriptComplete }) {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -788,7 +847,7 @@ function VoiceRecorder({ onTranscriptComplete }) {
   );
 }
 
-function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF, onBack, transcript, discount, setDiscount, margin, setMargin, clients, scadenza, setScadenza, pagamento, setPagamento, photos, setPhotos, prices, descrizione, setDescrizione, firmaImpresa, setFirmaImpresa, luogoFirma, setLuogoFirma, isEditing, onSaveOnly, onNavigate, isAIProcessing, isModifyRecording, modifyTranscript, startModifyRecording, stopModifyRecording, onAddPrice, onRememberMatch }) {
+function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF, onBack, transcript, discount, setDiscount, margin, setMargin, clients, scadenza, setScadenza, pagamento, setPagamento, photos, setPhotos, prices, descrizione, setDescrizione, firmaImpresa, setFirmaImpresa, luogoFirma, setLuogoFirma, isEditing, onSaveOnly, onNavigate, isAIProcessing, isModifyRecording, modifyTranscript, startModifyRecording, stopModifyRecording, onAddPrice, onRememberMatch, onUpdateClient }) {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showDBPicker, setShowDBPicker] = useState(false);
   const [dbSearch, setDbSearch] = useState("");
@@ -796,11 +855,23 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
   const [isDictating, setIsDictating] = useState(false);
   const [validationError, setValidationError] = useState("");
 
+  const clienteSelezionato = clientInfo?.clientId != null
+    ? (clients || []).find(c => String(c.id) === String(clientInfo.clientId)) || null
+    : null;
+  const clienteModificato = !!clienteSelezionato && CAMPI_CLIENTE.some(k =>
+    String(clientInfo[k] || "").trim() !== String(clientDaAnagrafica(clienteSelezionato)[k] || "").trim()
+  );
+  const salvaModificheCliente = () => {
+    if (clienteSelezionato && onUpdateClient) onUpdateClient(clienteSelezionato.id, clientInfo);
+  };
+
   const validateAndSubmit = () => {
     const errors = [];
     if (!clientInfo.nome?.trim()) errors.push("Nome cliente");
-    if (!clientInfo.indirizzo?.trim()) errors.push("Indirizzo");
-    if (!clientInfo.telefono?.trim() && !clientInfo.email?.trim()) errors.push("Telefono o Email");
+    if (!clienteSelezionato) {
+      if (!clientInfo.indirizzo?.trim()) errors.push("Indirizzo");
+      if (!clientInfo.telefono?.trim() && !clientInfo.email?.trim()) errors.push("Telefono o Email");
+    }
     if (!descrizione?.trim()) errors.push("Descrizione lavoro");
     if (!items || items.length === 0) errors.push("Almeno una voce di preventivo");
     const vociDaPrezzare = items.filter(it => it.daPrezzare && !(it.prezzo > 0)).length;
@@ -814,6 +885,9 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
       return;
     }
     setValidationError("");
+    if (clienteModificato && window.confirm(`Hai modificato i dati di ${clienteSelezionato.nome}. Vuoi salvare le modifiche anche nell'anagrafica clienti?`)) {
+      salvaModificheCliente();
+    }
     onGeneratePDF();
   };
   const dictRecRef = useRef(null);
@@ -972,7 +1046,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
   };
 
   return (
-    <div className="space-y-4" onBlur={(e) => { if (e.target.type === "number" && e.target.value) { const clean = String(parseFloat(e.target.value) || 0); if (e.target.value !== clean) { e.target.type = "text"; e.target.value = clean; e.target.type = "number"; } } }}>
+    <div className="space-y-4">
       <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2">
         <Check size={18} className="text-green-600" />
         <p className="text-green-700 text-sm font-medium">Preventivo generato dall'AI!</p>
@@ -1032,15 +1106,38 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
         <p className="text-xs text-gray-400 font-medium">DATI CLIENTE</p>
         {clients && clients.length > 0 && (
           <select
+            value={clienteSelezionato ? String(clienteSelezionato.id) : ""}
             onChange={(e) => {
-              const c = clients.find(cl => cl.id === parseInt(e.target.value));
-              if (c) setClientInfo({ nome: c.nome, indirizzo: c.indirizzo || "", telefono: c.whatsapp || "", email: c.email || "", codiceFiscale: c.codiceFiscale || "", tipo: c.tipo || "Privato" });
+              if (!e.target.value) {
+                setClientInfo({ nome: "", indirizzo: "", telefono: "", email: "", codiceFiscale: "" });
+                return;
+              }
+              const c = clients.find(cl => String(cl.id) === e.target.value);
+              if (c) setClientInfo({ ...clientDaAnagrafica(c), clientId: c.id });
             }}
             className="w-full p-2 border border-orange-300 rounded-lg text-sm focus:outline-none bg-orange-50 text-orange-700"
           >
-            <option value="">Seleziona dal database clienti...</option>
-            {clients.map(c => <option key={c.id} value={c.id}>{c.nome} ({c.tipo})</option>)}
+            <option value="">+ Nuovo cliente (compila i campi sotto)</option>
+            {clients.map(c => <option key={c.id} value={String(c.id)}>{c.nome}{c.tipo ? ` (${c.tipo})` : ""}</option>)}
           </select>
+        )}
+        {clienteSelezionato && clienteModificato && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+            <p className="text-xs text-amber-800">
+              Hai modificato i dati di <span className="font-semibold">{clienteSelezionato.nome}</span>. Vuoi salvare le modifiche nell'anagrafica clienti?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={salvaModificheCliente} className="text-xs font-semibold bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition">
+                Salva modifiche
+              </button>
+              <button onClick={() => setClientInfo({ ...clientDaAnagrafica(clienteSelezionato), clientId: clienteSelezionato.id })} className="text-xs font-medium text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition">
+                Annulla modifiche
+              </button>
+            </div>
+          </div>
+        )}
+        {clienteSelezionato && !clienteModificato && (
+          <p className="text-[11px] text-gray-400">Dati compilati dall'anagrafica clienti. Se li modifichi ti chiedo se salvarli.</p>
         )}
         <input value={clientInfo.nome} onChange={(e) => setClientInfo({ ...clientInfo, nome: e.target.value })} placeholder="Nome cliente *" className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
         <input value={clientInfo.indirizzo} onChange={(e) => setClientInfo({ ...clientInfo, indirizzo: e.target.value })} placeholder="Indirizzo *" className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:border-orange-400 focus:outline-none" />
@@ -1094,12 +1191,10 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
             <div className="flex flex-col items-center -mr-1">
               <GripVertical size={16} className="text-gray-300" />
             </div>
-            <input
-              type="number"
+            <NumberInput
               value={fase.percentuale}
-              onChange={(e) => { const u = [...pagamento]; u[i] = { ...u[i], percentuale: parseFloat(e.target.value) || 0 }; setPagamento(u); }}
+              onChange={(n) => { const u = [...pagamento]; u[i] = { ...u[i], percentuale: n }; setPagamento(u); }}
               className="w-16 p-2 border border-gray-200 rounded-lg text-sm text-center focus:border-orange-400 focus:outline-none"
-              min="0" max="100"
             />
             <span className="text-gray-400 text-sm">%</span>
             <input
@@ -1335,10 +1430,9 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
             </div>
             <div className="flex items-center gap-2 mt-2">
               <div className="flex items-center gap-1">
-                <input
-                  type="number"
+                <NumberInput
                   value={item.quantita}
-                  onChange={(e) => updateItem(i, "quantita", parseFloat(e.target.value) || 0)}
+                  onChange={(n) => updateItem(i, "quantita", n)}
                   className="w-16 p-1 border border-gray-200 rounded text-center text-sm focus:border-orange-400 focus:outline-none"
                 />
                 <span className="text-gray-400 text-xs">{item.unita}</span>
@@ -1346,10 +1440,9 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
               <span className="text-gray-300">×</span>
               <div className="flex items-center gap-1">
                 <span className="text-gray-400 text-xs">€</span>
-                <input
-                  type="number"
+                <NumberInput
                   value={item.prezzo}
-                  onChange={(e) => updateItem(i, "prezzo", parseFloat(e.target.value) || 0)}
+                  onChange={(n) => updateItem(i, "prezzo", n)}
                   className={`w-20 p-1 border rounded text-center text-sm focus:border-orange-400 focus:outline-none ${item.daPrezzare && !(item.prezzo > 0) ? "border-red-400 bg-white" : "border-gray-200"}`}
                 />
               </div>
@@ -1409,12 +1502,10 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
               <option value="percentuale">%</option>
               <option value="fisso">€ fisso</option>
             </select>
-            <input
-              type="number"
+            <NumberInput
               value={margin.valore}
-              onChange={(e) => setMargin({ ...margin, valore: parseFloat(e.target.value) || 0 })}
+              onChange={(n) => setMargin(prev => ({ ...prev, valore: n }))}
               className="flex-1 p-2 border border-blue-200 rounded-lg text-sm text-center focus:border-blue-400 focus:outline-none"
-              min="0"
             />
             <span className="text-blue-400 text-xs ml-auto whitespace-nowrap">
               + € {importoMargine.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1447,13 +1538,11 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
               <option value="percentuale">%</option>
               <option value="fisso">€ fisso</option>
             </select>
-            <input
-              type="number"
+            <NumberInput
               value={discount.valore}
-              onChange={(e) => setDiscount({ ...discount, valore: parseFloat(e.target.value) || 0 })}
+              onChange={(n) => setDiscount(prev => ({ ...prev, valore: n }))}
               placeholder={discount.tipo === "percentuale" ? "Es: 10" : "Es: 500"}
               className="flex-1 p-2 border border-green-200 rounded-lg text-sm focus:border-green-400 focus:outline-none"
-              min="0"
             />
             {discount.valore > 0 && (
               <span className="text-green-600 text-xs font-medium whitespace-nowrap">
@@ -1751,8 +1840,8 @@ function PriceDatabase({ prices, setPrices }) {
               <option value="kg">kg</option>
               <option value="ora">ora</option>
             </select>
-            <input type="number" value={newItem.costoInterno} onChange={(e) => setNewItem({...newItem, costoInterno: e.target.value})} placeholder="Costo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
-            <input type="number" value={newItem.prezzo} onChange={(e) => setNewItem({...newItem, prezzo: e.target.value})} placeholder="Prezzo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+            <NumberInput value={newItem.costoInterno} onChange={(n) => setNewItem(prev => ({...prev, costoInterno: n}))} placeholder="Costo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+            <NumberInput value={newItem.prezzo} onChange={(n) => setNewItem(prev => ({...prev, prezzo: n}))} placeholder="Prezzo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
           </div>
           <input value={newItem.note} onChange={(e) => setNewItem({...newItem, note: e.target.value})} placeholder="Note (opzionale)" className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
           <div className="flex items-center gap-2">
@@ -1797,9 +1886,9 @@ function PriceDatabase({ prices, setPrices }) {
                   <p className="font-medium text-sm text-gray-800">{item.voce}</p>
                 <div className="flex gap-2 items-center">
                   <span className="text-xs text-gray-400">Costo €</span>
-                  <input type="number" value={editValues.costoInterno} onChange={(e) => setEditValues({...editValues, costoInterno: parseFloat(e.target.value)})} className="w-20 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
+                  <NumberInput value={editValues.costoInterno} onChange={(n) => setEditValues(prev => ({...prev, costoInterno: n}))} className="w-20 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
                   <span className="text-xs text-gray-400">→ Prezzo €</span>
-                  <input type="number" value={editValues.prezzo} onChange={(e) => setEditValues({...editValues, prezzo: parseFloat(e.target.value)})} className="w-20 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
+                  <NumberInput value={editValues.prezzo} onChange={(n) => setEditValues(prev => ({...prev, prezzo: n}))} className="w-20 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
                   <span className="text-xs text-gray-400">/{item.unita}</span>
                   <div className="ml-auto flex gap-1">
                     <button onClick={() => saveEdit(item.id)} className="p-1 bg-green-500 text-white rounded"><Check size={14} /></button>
@@ -2468,7 +2557,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
           )}
           <input value={newItem.voce} onChange={(e) => setNewItem({...newItem, voce: e.target.value})} placeholder="Nome voce" className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
           <div className="flex gap-2">
-            <input type="number" value={newItem.importo} onChange={(e) => setNewItem({...newItem, importo: e.target.value})} placeholder="Importo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+            <NumberInput value={newItem.importo} onChange={(n) => setNewItem(prev => ({...prev, importo: n}))} placeholder="Importo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
             <select value={newItem.frequenza} onChange={(e) => setNewItem({...newItem, frequenza: e.target.value})} className="p-2 border border-orange-200 rounded-lg text-sm focus:outline-none">
               <option value="mensile">Mensile</option>
               <option value="annuale">Annuale</option>
@@ -2509,7 +2598,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
                   <p className="font-medium text-sm text-gray-800">{item.voce}</p>
                   <div className="flex gap-2 items-center">
                     <span className="text-xs text-gray-400">€</span>
-                    <input type="number" value={editValues.importo} onChange={(e) => setEditValues({...editValues, importo: parseFloat(e.target.value)})} className="w-24 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
+                    <NumberInput value={editValues.importo} onChange={(n) => setEditValues(prev => ({...prev, importo: n}))} className="w-24 p-1 border border-orange-300 rounded text-sm text-center focus:outline-none" />
                     <select value={editValues.frequenza} onChange={(e) => setEditValues({...editValues, frequenza: e.target.value})} className="p-1 border border-orange-300 rounded text-sm focus:outline-none">
                       <option value="mensile">Mensile</option>
                       <option value="annuale">Annuale</option>
@@ -2623,7 +2712,7 @@ function StoricoView({ quotes, onViewQuote, onDeleteQuote }) {
   );
 }
 
-function NuovoPreventivo({ prices, clients, quotes, onSaveQuote, onNavigate, onDownloadPDF, initialData, userProfile, onAddPrice, onRememberMatch }) {
+function NuovoPreventivo({ prices, clients, quotes, onSaveQuote, onNavigate, onDownloadPDF, initialData, userProfile, onAddPrice, onRememberMatch, onUpdateClient }) {
   const isEditing = !!initialData;
 
   // Scadenza: default 30 giorni da oggi
@@ -3003,6 +3092,7 @@ const startModifyRecording = () => {
             stopModifyRecording={stopModifyRecording}
             onAddPrice={onAddPrice}
             onRememberMatch={onRememberMatch}
+            onUpdateClient={onUpdateClient}
         />
       )}
 
@@ -3075,18 +3165,33 @@ function generatePDF(quote, userProfile, returnBlob = false) {
     grouped[item.categoria].push(item);
   });
 
+  const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const fmtQ = (n) => Number(n || 0).toLocaleString("it-IT", { maximumFractionDigits: 2 });
+
+  // html2pdf taglia un'unica immagine in pagine: le righe sono div con classe pdf-avoid perché le spinga intere alla pagina dopo (con <tr> non funziona).
+  const colonne = [
+    { stile: "flex:1;min-width:0;padding:8px 12px;text-align:left;" },
+    { stile: "width:58px;padding:8px 6px;text-align:center;" },
+    { stile: "width:54px;padding:8px 6px;text-align:center;" },
+    { stile: "width:92px;padding:8px 6px;text-align:right;white-space:nowrap;" },
+    { stile: "width:46px;padding:8px 6px;text-align:center;" },
+    { stile: "width:104px;padding:8px 12px 8px 6px;text-align:right;white-space:nowrap;" },
+  ];
+  const rigaVoce = (item) => `<div style="display:flex;align-items:center;border-bottom:1px solid #F3F4F6;font-size:12px;">
+        <div style="${colonne[0].stile}color:#374151;overflow-wrap:anywhere;">${esc(item.voce)}</div>
+        <div style="${colonne[1].stile}color:#6B7280;">${fmtQ(item.quantita)}</div>
+        <div style="${colonne[2].stile}color:#6B7280;">${esc(item.unita)}</div>
+        <div style="${colonne[3].stile}color:#6B7280;">€ ${fmt(item.prezzo)}</div>
+        <div style="${colonne[4].stile}color:#6B7280;">${item.iva ?? 22}%</div>
+        <div style="${colonne[5].stile}color:#1F2937;font-weight:600;">€ ${fmt(item.quantita * item.prezzo)}</div>
+      </div>`;
+
   let tableRows = "";
   Object.entries(grouped).forEach(([cat, items]) => {
-    tableRows += `<tr><td colspan="6" style="background:#FFF7ED;padding:8px 12px;font-weight:700;color:#EA580C;font-size:13px;border-bottom:1px solid #FED7AA;">${cat}</td></tr>`;
-    items.forEach(item => {
-      tableRows += `<tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#374151;">${item.voce}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:center;">${item.quantita}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:center;">${item.unita}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:right;">€ ${fmt(item.prezzo)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;text-align:center;">${item.iva ?? 22}%</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#1F2937;text-align:right;font-weight:600;">€ ${fmt(item.quantita * item.prezzo)}</td>
-      </tr>`;
+    const intestazione = `<div style="background:#FFF7ED;padding:8px 12px;font-weight:700;color:#EA580C;font-size:13px;border-bottom:1px solid #FED7AA;">${esc(cat)}</div>`;
+    tableRows += `<div class="pdf-avoid">${intestazione}${items[0] ? rigaVoce(items[0]) : ""}</div>`;
+    items.slice(1).forEach(item => {
+      tableRows += `<div class="pdf-avoid">${rigaVoce(item)}</div>`;
     });
   });
 
@@ -3129,38 +3234,36 @@ function generatePDF(quote, userProfile, returnBlob = false) {
     </div>
   </div>
 
-  <div style="background:#F9FAFB;border-radius:8px;padding:16px;margin-bottom:24px;">
+  <div class="pdf-avoid" style="background:#F9FAFB;border-radius:8px;padding:16px;margin-bottom:24px;">
     <p style="margin:0 0 4px;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;">Dati Cliente</p>
     <p style="margin:0;font-size:15px;font-weight:600;color:#1F2937;">${quote.cliente || "—"}</p>
     ${quote.clientInfo?.indirizzo ? `<p style="margin:2px 0 0;font-size:13px;color:#6B7280;">${quote.clientInfo.indirizzo}</p>` : ""}
     ${quote.clientInfo?.telefono ? `<p style="margin:2px 0 0;font-size:13px;color:#6B7280;">Tel: ${quote.clientInfo.telefono}</p>` : ""}
   </div>
 
-  ${quote.descrizione ? `<div style="background:#FFF7ED;border-radius:8px;padding:12px 16px;margin-bottom:24px;overflow:hidden;box-sizing:border-box;">
+  ${quote.descrizione ? `<div class="pdf-avoid" style="background:#FFF7ED;border-radius:8px;padding:12px 16px;margin-bottom:24px;overflow:hidden;box-sizing:border-box;">
     <p style="margin:0 0 4px;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;">Descrizione Lavoro</p>
     <p style="margin:0;font-size:13px;color:#6B7280;word-wrap:break-word;overflow-wrap:break-word;white-space:pre-wrap;">${quote.descrizione}</p>
   </div>` : ""}
 
-  <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-    <thead>
-      <tr style="background:#1F2937;">
-        <th style="padding:10px 12px;text-align:left;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">Voce</th>
-        <th style="padding:10px 12px;text-align:center;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">Q.tà</th>
-        <th style="padding:10px 12px;text-align:center;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">U.M.</th>
-        <th style="padding:10px 12px;text-align:right;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">Prezzo</th>
-        <th style="padding:10px 12px;text-align:center;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">IVA</th>
-        <th style="padding:10px 12px;text-align:right;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">Totale</th>
-      </tr>
-    </thead>
-    <tbody>${tableRows}</tbody>
-  </table>
+  <div style="margin-bottom:24px;">
+    <div class="pdf-avoid" style="display:flex;background:#1F2937;font-size:11px;color:#fff;font-weight:600;text-transform:uppercase;">
+      <div style="${colonne[0].stile}padding-top:10px;padding-bottom:10px;">Voce</div>
+      <div style="${colonne[1].stile}padding-top:10px;padding-bottom:10px;">Q.tà</div>
+      <div style="${colonne[2].stile}padding-top:10px;padding-bottom:10px;">U.M.</div>
+      <div style="${colonne[3].stile}padding-top:10px;padding-bottom:10px;">Prezzo</div>
+      <div style="${colonne[4].stile}padding-top:10px;padding-bottom:10px;">IVA</div>
+      <div style="${colonne[5].stile}padding-top:10px;padding-bottom:10px;">Totale</div>
+    </div>
+    ${tableRows}
+  </div>
 
-  <div style="margin-left:auto;width:300px;">
+  <div class="pdf-avoid" style="margin-left:auto;width:300px;">
     <table style="width:100%;border-collapse:collapse;">${totaliRows}</table>
   </div>
 
   ${(quote.pagamento && quote.pagamento.length > 0) ? `
-  <div style="margin-top:24px;background:#F9FAFB;border-radius:8px;padding:16px;">
+  <div class="pdf-avoid" style="margin-top:24px;background:#F9FAFB;border-radius:8px;padding:16px;">
     <p style="margin:0 0 8px;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;">Modalità di Pagamento</p>
     ${quote.pagamento.map(f => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:#6B7280;">
       <span>${f.fase}</span><span style="font-weight:600;color:#1F2937;">${f.percentuale}% — € ${fmt(totale * f.percentuale / 100)}</span>
@@ -3171,25 +3274,29 @@ function generatePDF(quote, userProfile, returnBlob = false) {
   <div style="margin-top:24px;page-break-before:auto;">
     <p style="margin:0 0 12px;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;">Foto Sopralluogo</p>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-      ${quote.photos.map(p => `<img src="${p.data}" style="width:100%;height:200px;object-fit:cover;border-radius:8px;border:1px solid #E5E7EB;" />`).join("")}
+      ${quote.photos.map(p => `<img class="pdf-avoid" src="${p.data}" style="width:100%;height:200px;object-fit:cover;border-radius:8px;border:1px solid #E5E7EB;" />`).join("")}
     </div>
   </div>` : ""}
 
-  ${(quote.luogoFirma || quote.firmaImpresa) ? `
-  <div style="margin-top:40px;padding-top:20px;border-top:1px solid #E5E7EB;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-      <div>
-        <p style="margin:0;font-size:12px;color:#6B7280;">${quote.luogoFirma ? quote.luogoFirma + ", " : ""}${quote.data || new Date().toLocaleDateString("it-IT")}</p>
-      </div>
-      <div style="text-align:center;">
+  <div class="pdf-avoid" style="margin-top:40px;padding-top:20px;border-top:1px solid #E5E7EB;">
+    <p style="margin:0 0 28px;font-size:12px;color:#6B7280;">${quote.luogoFirma ? esc(quote.luogoFirma) + ", " : "Luogo e data: "}${quote.data || new Date().toLocaleDateString("it-IT")}</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:40px;">
+      <div style="flex:1;text-align:center;">
         <p style="margin:0;font-size:11px;color:#9CA3AF;text-transform:uppercase;">L'Impresa</p>
-        ${quote.firmaImpresa ? `<p style="margin:8px 0 4px;font-family:'Brush Script MT','Segoe Script','Dancing Script',cursive;font-size:28px;color:#1F2937;">${quote.firmaImpresa}</p>` : ""}
-        <div style="border-top:1px solid #9CA3AF;width:200px;margin:0 auto;"></div>
+        <div style="height:48px;display:flex;align-items:flex-end;justify-content:center;">
+          ${quote.firmaImpresa ? `<p style="margin:0 0 4px;font-family:'Brush Script MT','Segoe Script','Dancing Script',cursive;font-size:28px;color:#1F2937;">${esc(quote.firmaImpresa)}</p>` : ""}
+        </div>
+        <div style="border-top:1px solid #9CA3AF;width:220px;margin:0 auto;"></div>
+      </div>
+      <div style="flex:1;text-align:center;">
+        <p style="margin:0;font-size:11px;color:#9CA3AF;text-transform:uppercase;">Il Cliente per accettazione</p>
+        <div style="height:48px;"></div>
+        <div style="border-top:1px solid #9CA3AF;width:220px;margin:0 auto;"></div>
       </div>
     </div>
-  </div>` : ""}
+  </div>
 
-  <div style="margin-top:${(quote.luogoFirma || quote.firmaImpresa) ? "20" : "40"}px;padding-top:16px;border-top:1px solid #E5E7EB;text-align:center;">
+  <div style="margin-top:20px;padding-top:16px;border-top:1px solid #E5E7EB;text-align:center;">
     <p style="margin:0;font-size:11px;color:#9CA3AF;">Preventivo valido ${quote.scadenza ? `fino al ${new Date(quote.scadenza).toLocaleDateString("it-IT")}` : "30 giorni dalla data di emissione"}</p>
     <p style="margin:4px 0 0;font-size:11px;color:#9CA3AF;">${aziendaNome}${aziendaTel ? ` — Tel: ${aziendaTel}` : ""}${aziendaEmail ? ` — ${aziendaEmail}` : ""}</p>
   </div>
@@ -3214,7 +3321,7 @@ function generatePDF(quote, userProfile, returnBlob = false) {
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["css", "legacy"] }
+      pagebreak: { mode: ["css", "legacy"], avoid: [".pdf-avoid"] }
     };
     const worker = window.html2pdf().set(opt).from(html, 'string');
     if (returnBlob) {
@@ -3568,9 +3675,11 @@ export default function App({ session }) {
   const [referrals, setReferrals] = useState([]);
   const pricesRef = useRef(prices);
   const costiFissiRef = useRef(costiFissi);
-  const syncReadyRef = useRef({ prices: false, costiFissi: false });
+  const clientsRef = useRef(clients);
+  const syncReadyRef = useRef({ prices: false, costiFissi: false, clients: false });
   pricesRef.current = prices;
   costiFissiRef.current = costiFissi;
+  clientsRef.current = clients;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -3698,11 +3807,14 @@ export default function App({ session }) {
 
         }
 
-        const { data: clientsData } = await supabase.from("clients").select("*").eq("user_id", userId).order("created_at", { ascending: false });
-        if (clientsData) {
-          setClients(clientsData.map(c => ({
-            id: c.id, nome: c.nome, codiceFiscale: c.codice_fiscale || "", indirizzo: c.indirizzo || "", telefono: c.telefono || "", whatsapp: c.telefono || "", email: c.email || "", note: c.note || "",
-          })));
+        const { data: clientsData, error: clientsError } = await supabase.from("clients").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+        if (clientsError) {
+          console.error("Errore caricamento clienti:", clientsError);
+        } else {
+          const anagrafica = (clientsData || []).map(clientFromDb);
+          clientsRef.current = anagrafica;
+          setClients(anagrafica);
+          syncReadyRef.current.clients = true;
         }
 
         const { data: quotesData } = await supabase.from("quotes").select("*").eq("user_id", userId).order("created_at", { ascending: false });
@@ -3762,16 +3874,23 @@ export default function App({ session }) {
     });
   };
 
-  const syncClientsToSupabase = async (newClients) => {
-    setClients(newClients);
-    if (!session?.user?.id || !dataLoaded) return;
-    await supabase.from("clients").delete().eq("user_id", session.user.id);
-    if (newClients.length > 0) {
-      await supabase.from("clients").insert(newClients.map(c => ({
-        user_id: session.user.id,
-        nome: c.nome || "", codice_fiscale: c.codiceFiscale || "", indirizzo: c.indirizzo || "", telefono: c.telefono || c.whatsapp || "", email: c.email || "", note: c.note || "",
-      })));
-    }
+  const saveClients = (next) => {
+    const prev = clientsRef.current;
+    clientsRef.current = next;
+    setClients(next);
+    if (!session?.user?.id || !syncReadyRef.current.clients) return;
+    syncRows("clients", prev, next, clientToDb, session.user.id, setClients).catch(err => {
+      console.error("Errore salvataggio clienti:", err);
+      alert("Non sono riuscito a salvare le modifiche ai clienti. Controlla la connessione e riprova.");
+    });
+  };
+
+  const updateClient = (clientId, dati) => {
+    saveClients(clientsRef.current.map(c => String(c.id) === String(clientId) ? {
+      ...c,
+      nome: (dati.nome || "").trim(), indirizzo: dati.indirizzo || "", telefono: dati.telefono || "", whatsapp: dati.telefono || "",
+      email: dati.email || "", codiceFiscale: dati.codiceFiscale || "",
+    } : c));
   };
 
   const savePrices = (next) => {
@@ -3842,12 +3961,15 @@ export default function App({ session }) {
       // Auto-insert client if not in database
       const clienteNome = quote.clientInfo?.nome?.trim();
       const clienteCF = quote.clientInfo?.codiceFiscale?.trim();
-      if (clienteNome) {
+      if (clienteNome && quote.clientInfo?.clientId == null) {
         const exists = clienteCF ? clients.some(c => c.codiceFiscale && c.codiceFiscale.toLowerCase() === clienteCF.toLowerCase()) : clients.some(c => c.nome.toLowerCase() === clienteNome.toLowerCase());
         if (!exists) {
-            const newClient = { id: Date.now(), tipo: "Privato", nome: clienteNome, codiceFiscale: quote.clientInfo?.codiceFiscale || "", email: quote.clientInfo?.email || "", whatsapp: quote.clientInfo?.telefono || "", indirizzo: quote.clientInfo?.indirizzo || "", note: "Auto-inserito da preventivo" };
-            setClients(prev => [newClient, ...prev]);
-            await supabase.from("clients").insert({ user_id: session.user.id, nome: clienteNome, codice_fiscale: quote.clientInfo?.codiceFiscale || "", email: quote.clientInfo?.email || "", telefono: quote.clientInfo?.telefono || "", indirizzo: quote.clientInfo?.indirizzo || "", note: "Auto-inserito da preventivo" });
+          saveClients([{
+            id: Date.now() + "-" + Math.random().toString(36).slice(2), tipo: "Privato", nome: clienteNome,
+            codiceFiscale: quote.clientInfo?.codiceFiscale || "", email: quote.clientInfo?.email || "",
+            telefono: quote.clientInfo?.telefono || "", whatsapp: quote.clientInfo?.telefono || "",
+            indirizzo: quote.clientInfo?.indirizzo || "", note: "Auto-inserito da preventivo",
+          }, ...clientsRef.current]);
         }
       }
     }
@@ -3948,7 +4070,7 @@ export default function App({ session }) {
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
       {currentView === "gestione-abbonamento" && <GestioneAbbonamento onNavigate={(v) => setCurrentView(v)} subscriptionStatus={subscriptionStatus} trialEnd={trialEnd} onShowPricing={() => setShowPricing(true)} onCancelSubscription={() => setSubscriptionStatus("expired")} session={session} />}
       {currentView === "invita-amico" && <InvitaAmico onNavigate={(v) => setCurrentView(v)} session={session} referralCode={referralCode} referrals={referrals} />}
-        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} quotes={quotes} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)} userProfile={userProfile} onAddPrice={addPriceToListino} onRememberMatch={rememberComputoMatch} />}
+        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} quotes={quotes} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)} userProfile={userProfile} onAddPrice={addPriceToListino} onRememberMatch={rememberComputoMatch} onUpdateClient={updateClient} />}
         {currentView === "modifica" && editingQuote && (
           <NuovoPreventivo
             prices={prices}
@@ -3961,10 +4083,11 @@ export default function App({ session }) {
             userProfile={userProfile}
             onAddPrice={addPriceToListino}
             onRememberMatch={rememberComputoMatch}
+            onUpdateClient={updateClient}
           />
         )}
         {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={savePrices} /></div>}
-          {currentView === "clienti" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><ClientDatabase clients={clients} setClients={syncClientsToSupabase} /></div>}
+          {currentView === "clienti" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><ClientDatabase clients={clients} setClients={saveClients} /></div>}
           {currentView === "costifissi" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><CostiFissiView costiFissi={costiFissi} setCostiFissi={saveCostiFissi} /></div>}
         {currentView === "storico" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><StoricoView quotes={quotes} onViewQuote={handleViewQuote} onDeleteQuote={handleDeleteQuote} /></div>}
         {currentView === "dettaglio" && selectedQuote && (
