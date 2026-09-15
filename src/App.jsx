@@ -3250,13 +3250,30 @@ function generatePDF(quote, userProfile, returnBlob = false) {
     });
   });
 
-  // Righe a blocchi (non griglia): lo spazio che html2pdf inserisce prima di una riga pdf-avoid in una griglia diventerebbe una cella vuota.
+  // Righe a blocchi, non griglia: in una griglia lo spazio che html2pdf inserisce per non spezzare diventa una cella vuota.
   const fotoPdf = (quote.photos || []).filter(p => p.data);
-  const cellaFoto = (p) => `<div style="flex:1;min-width:0;text-align:center;">${p ? `<img src="${p.data}" style="display:inline-block;max-width:100%;max-height:420px;width:auto;height:auto;border-radius:8px;border:1px solid #E5E7EB;" />` : ""}</div>`;
-  const righeFoto = [];
-  for (let i = 0; i < fotoPdf.length; i += 2) {
-    righeFoto.push(`<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">${cellaFoto(fotoPdf[i])}${cellaFoto(fotoPdf[i + 1])}</div>`);
-  }
+  const LARGHEZZA_CELLA_FOTO = 353; // (190mm utili della pagina A4 = 718px, meno 12px di spazio) / 2
+  const ALTEZZA_MAX_FOTO = 420;
+  const misuraFoto = (src) => new Promise(resolve => {
+    const img = new window.Image();
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+  // html2pdf calcola i salti pagina prima di decodificare le immagini: senza misure esplicite le vede alte 0 e le spezza.
+  const costruisciRigheFoto = (dimensioni) => {
+    const cellaFoto = (p, d) => {
+      if (!p) return `<div style="flex:1;min-width:0;"></div>`;
+      const scala = d ? Math.min(1, LARGHEZZA_CELLA_FOTO / d.w, ALTEZZA_MAX_FOTO / d.h) : 0;
+      const misura = d ? `width:${Math.round(d.w * scala)}px;height:${Math.round(d.h * scala)}px;` : `max-width:100%;max-height:${ALTEZZA_MAX_FOTO}px;`;
+      return `<div style="flex:1;min-width:0;text-align:center;"><img src="${p.data}" style="display:inline-block;${misura}border-radius:8px;border:1px solid #E5E7EB;" /></div>`;
+    };
+    const righe = [];
+    for (let i = 0; i < fotoPdf.length; i += 2) {
+      righe.push(`<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">${cellaFoto(fotoPdf[i], dimensioni[i])}${cellaFoto(fotoPdf[i + 1], dimensioni[i + 1])}</div>`);
+    }
+    return righe;
+  };
 
   let totaliRows =`<tr><td style="padding:6px 12px;font-size:12px;color:#6B7280;">Subtotale voci</td><td style="padding:6px 12px;font-size:12px;color:#6B7280;text-align:right;">€ ${fmt(subtotale)}</td></tr>`;
   if (marginEnabled && importoMargine > 0) {
@@ -3280,7 +3297,7 @@ function generatePDF(quote, userProfile, returnBlob = false) {
   const aziendaEmail = userProfile?.email || "";
   const aziendaIndirizzo = userProfile?.indirizzo || "";
 
-  const html = `<!DOCTYPE html>
+  const creaHtml = (righeFoto) => `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Preventivo - ${quote.cliente || "Cliente"}</title>
 <style> body { font-family: "Segoe UI", Arial, sans-serif; color: #1F2937; max-width: 800px; margin: 0 auto; padding: 20px; } </style></head><body>
   <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:20px;border-bottom:3px solid #EA580C;margin-bottom:24px;">
@@ -3378,7 +3395,12 @@ function generatePDF(quote, userProfile, returnBlob = false) {
 
   const nomeFile = "Preventivo_" + (quote.cliente || "Cliente").replace(/\s+/g, "_") + "_" + (quote.data ? quote.data.replace(/\//g, "-") : "oggi") + ".pdf";
 
-  const pdfPromise = loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js").then(() => {
+  let html = "";
+  const pdfPromise = Promise.all([
+    loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"),
+    Promise.all(fotoPdf.map(p => misuraFoto(p.data))),
+  ]).then(([, dimensioni]) => {
+    html = creaHtml(costruisciRigheFoto(dimensioni));
     const opt = {
       margin: [10, 10, 10, 10],
       filename: nomeFile,
@@ -3394,7 +3416,7 @@ function generatePDF(quote, userProfile, returnBlob = false) {
     return worker.save();
   }).catch((err) => {
     console.error("PDF generation error:", err);
-    const blob = new Blob([html], { type: "text/html" });
+    const blob = new Blob([html || creaHtml(costruisciRigheFoto([]))], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
