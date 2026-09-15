@@ -3173,6 +3173,8 @@ function generatePDF(quote, userProfile, returnBlob = false) {
 
   const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const fmtQ = (n) => Number(n || 0).toLocaleString("it-IT", { maximumFractionDigits: 2 });
+  // html2canvas non adatta il testo al contenitore: stima ~0,58em per carattere del corsivo per stare in 270px su una riga.
+  const dimensioneFirma = (testo) => Math.max(12, Math.min(28, Math.floor(270 / Math.max(1, String(testo).trim().length * 0.58))));
 
   // html2pdf taglia un'unica immagine in pagine: le righe sono div con classe pdf-avoid perché le spinga intere alla pagina dopo (con <tr> non funziona).
   const colonne = [
@@ -3287,17 +3289,17 @@ function generatePDF(quote, userProfile, returnBlob = false) {
   <div class="pdf-avoid" style="margin-top:40px;padding-top:20px;border-top:1px solid #E5E7EB;">
     <p style="margin:0 0 28px;font-size:12px;color:#6B7280;">${quote.luogoFirma ? esc(quote.luogoFirma) + ", " : "Luogo e data: "}${quote.data || new Date().toLocaleDateString("it-IT")}</p>
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:40px;">
-      <div style="flex:1;text-align:center;">
-        <p style="margin:0;font-size:11px;color:#9CA3AF;text-transform:uppercase;">L'Impresa</p>
-        <div style="height:48px;display:flex;align-items:flex-end;justify-content:center;">
-          ${quote.firmaImpresa ? `<p style="margin:0 0 4px;font-family:'Brush Script MT','Segoe Script','Dancing Script',cursive;font-size:28px;color:#1F2937;">${esc(quote.firmaImpresa)}</p>` : ""}
+      <div style="flex:1;min-width:0;text-align:center;">
+        <p style="margin:0 0 6px;font-size:11px;color:#9CA3AF;text-transform:uppercase;">L'Impresa</p>
+        <div style="height:48px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;">
+          ${quote.firmaImpresa ? `<span style="display:block;white-space:nowrap;line-height:1.15;margin-bottom:2px;font-family:'Brush Script MT','Segoe Script','Dancing Script',cursive;font-size:${dimensioneFirma(quote.firmaImpresa)}px;color:#1F2937;">${esc(quote.firmaImpresa)}</span>` : ""}
         </div>
-        <div style="border-top:1px solid #9CA3AF;width:220px;margin:0 auto;"></div>
+        <div style="border-top:1px solid #9CA3AF;width:280px;max-width:100%;margin:0 auto;"></div>
       </div>
-      <div style="flex:1;text-align:center;">
-        <p style="margin:0;font-size:11px;color:#9CA3AF;text-transform:uppercase;">Il Cliente per accettazione</p>
+      <div style="flex:1;min-width:0;text-align:center;">
+        <p style="margin:0 0 6px;font-size:11px;color:#9CA3AF;text-transform:uppercase;">Il Cliente per accettazione</p>
         <div style="height:48px;"></div>
-        <div style="border-top:1px solid #9CA3AF;width:220px;margin:0 auto;"></div>
+        <div style="border-top:1px solid #9CA3AF;width:280px;max-width:100%;margin:0 auto;"></div>
       </div>
     </div>
   </div>
