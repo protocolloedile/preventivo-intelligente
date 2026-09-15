@@ -113,7 +113,7 @@ function drawToJpeg(width, height, draw) {
   return Promise.resolve(draw(ctx, canvas)).then(() => canvas.toDataURL("image/jpeg", 0.8));
 }
 
-async function imageFileToDataUrl(file) {
+async function imageFileToDataUrl(file, maxSide = COMPUTO_MAX_SIDE) {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise((resolve, reject) => {
@@ -122,7 +122,7 @@ async function imageFileToDataUrl(file) {
       el.onerror = () => reject(new Error("Immagine non leggibile: " + file.name));
       el.src = url;
     });
-    const scale = Math.min(1, COMPUTO_MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
     const w = img.naturalWidth * scale;
     const h = img.naturalHeight * scale;
     return await drawToJpeg(w, h, (ctx, canvas) => ctx.drawImage(img, 0, 0, canvas.width, canvas.height));
@@ -235,6 +235,48 @@ async function computoToQuote(files, priceDB) {
   }, headers);
 
   return { items: items || [], oggetto: extracted.find(e => e.oggetto)?.oggetto || "" };
+}
+
+// ========== FOTO SOPRALLUOGO (Supabase Storage) ==========
+const FOTO_BUCKET = "foto-sopralluogo";
+const FOTO_MAX_SIDE = 1600;
+
+async function uploadQuotePhotos(photos, userId) {
+  return Promise.all((photos || []).map(async (p) => {
+    if (p.path || !p.data) return p;
+    const blob = await (await fetch(p.data)).blob();
+    const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+    const { error } = await supabase.storage.from(FOTO_BUCKET).upload(path, blob, { contentType: blob.type || "image/jpeg" });
+    if (error) throw error;
+    return { ...p, path };
+  }));
+}
+
+// Se il download fallisce la foto resta con il solo path: toglierla farebbe cancellare il file al salvataggio.
+async function hydratePhotos(photos) {
+  return Promise.all((photos || []).map(async (p) => {
+    if (p.data || !p.path) return p;
+    const { data, error } = await supabase.storage.from(FOTO_BUCKET).download(p.path);
+    if (error) {
+      console.error("Foto sopralluogo non scaricata:", p.path, error);
+      return p;
+    }
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(data);
+    });
+    return { ...p, data: dataUrl };
+  }));
+}
+
+const photosForDb = (photos) => (photos || []).filter(p => p.path).map(p => ({ id: p.id, name: p.name || "", path: p.path }));
+
+async function removeStoragePhotos(paths) {
+  if (!paths.length) return;
+  const { error } = await supabase.storage.from(FOTO_BUCKET).remove(paths);
+  if (error) console.error("Errore eliminazione foto sopralluogo:", error);
 }
 
 // Deve restare identica a normalizeDescrizione in api/matchComputo.js: e' la chiave della memoria abbinamenti.
@@ -1640,18 +1682,17 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                 accept="image/*"
                 multiple
                 className="hidden"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const files = Array.from(e.target.files || []);
-                  const remaining = 10 - photos.length;
-                  const toAdd = files.slice(0, remaining);
-                  toAdd.forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                      setPhotos(prev => [...prev, { id: Date.now() + Math.random(), name: file.name, data: ev.target.result }].slice(0, 10));
-                    };
-                    reader.readAsDataURL(file);
-                  });
                   e.target.value = "";
+                  for (const file of files.slice(0, 10 - photos.length)) {
+                    try {
+                      const data = await imageFileToDataUrl(file, FOTO_MAX_SIDE);
+                      setPhotos(prev => [...prev, { id: Date.now() + Math.random(), name: file.name, data }].slice(0, 10));
+                    } catch (err) {
+                      alert(err.message);
+                    }
+                  }
                 }}
               />
             </label>
@@ -1666,7 +1707,13 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
           <div className="grid grid-cols-4 gap-2">
             {photos.map((photo) => (
               <div key={photo.id} className="relative group">
-                <img src={photo.data} alt={photo.name} className="w-full h-16 object-cover rounded-lg border border-gray-200" />
+                {photo.data ? (
+                  <img src={photo.data} alt={photo.name} className="w-full h-16 object-cover rounded-lg border border-gray-200" />
+                ) : (
+                  <div className="w-full h-16 rounded-lg border border-gray-200 bg-gray-100 flex items-center justify-center" title="Foto non scaricata: riprova più tardi">
+                    <Image size={16} className="text-gray-300" />
+                  </div>
+                )}
                 <button
                   onClick={() => setPhotos(photos.filter(p => p.id !== photo.id))}
                   className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
@@ -3278,11 +3325,11 @@ function generatePDF(quote, userProfile, returnBlob = false) {
     </div>`).join("")}
   </div>` : ""}
 
-  ${(quote.photos && quote.photos.length > 0) ? `
+  ${(quote.photos || []).some(p => p.data) ? `
   <div style="margin-top:24px;page-break-before:auto;">
     <p style="margin:0 0 12px;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;">Foto Sopralluogo</p>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-      ${quote.photos.map(p => `<img class="pdf-avoid" src="${p.data}" style="width:100%;height:200px;object-fit:cover;border-radius:8px;border:1px solid #E5E7EB;" />`).join("")}
+      ${quote.photos.filter(p => p.data).map(p => `<img class="pdf-avoid" src="${p.data}" style="width:100%;height:200px;object-fit:cover;border-radius:8px;border:1px solid #E5E7EB;" />`).join("")}
     </div>
   </div>` : ""}
 
@@ -3837,7 +3884,7 @@ export default function App({ session }) {
               cliente: meta?.cliente || "", clientInfo: meta?.clientInfo || {},
               discount: meta?.discount, margin: meta?.margin,
               firmaImpresa: meta?.firmaImpresa || "", luogoFirma: meta?.luogoFirma || "",
-              costoTotaleInterno: meta?.costoTotaleInterno || 0, voci: realItems.length,
+              costoTotaleInterno: meta?.costoTotaleInterno || 0, voci: realItems.length, photos: meta?.photos || [],
               created_at: q.created_at, data: new Date(q.created_at).toLocaleDateString("it-IT"),
             };
           }));
@@ -3946,22 +3993,36 @@ export default function App({ session }) {
   };
 
   const saveQuote = async (quote) => {
+    let fotoSalvate = quote.photos || [];
+    try {
+      fotoSalvate = await uploadQuotePhotos(fotoSalvate, session.user.id);
+    } catch (err) {
+      console.error("Errore caricamento foto sopralluogo:", err);
+      alert("Non sono riuscito a salvare le foto del sopralluogo: il preventivo viene salvato senza le foto nuove.");
+      fotoSalvate = fotoSalvate.filter(p => p.path);
+    }
+    quote = { ...quote, photos: fotoSalvate };
+    const metaFoto = photosForDb(fotoSalvate);
+
     if (editingQuote !== null && editingQuote.index !== undefined) {
+      const fotoPrecedenti = (editingQuote.photos || []).map(p => p.path).filter(Boolean);
       const updated = [...quotes];
       updated[editingQuote.index] = quote;
       setQuotes(updated);
       setEditingQuote(null);
       if (quote._supabaseId) {
           await supabase.from("quotes").update({
-            descrizione: quote.descrizione, items: [...quote.items.filter(i => !i._meta), { _meta: true, cliente: quote.clientInfo?.nome || quote.cliente, clientInfo: quote.clientInfo, discount: quote.discount, margin: quote.margin, firmaImpresa: quote.firmaImpresa, luogoFirma: quote.luogoFirma, costoTotaleInterno: quote.costoTotaleInterno }], pagamento: quote.pagamento,
+            descrizione: quote.descrizione, items: [...quote.items.filter(i => !i._meta), { _meta: true, cliente: quote.clientInfo?.nome || quote.cliente, clientInfo: quote.clientInfo, discount: quote.discount, margin: quote.margin, firmaImpresa: quote.firmaImpresa, luogoFirma: quote.luogoFirma, costoTotaleInterno: quote.costoTotaleInterno, photos: metaFoto }], pagamento: quote.pagamento,
             scadenza: quote.scadenza, note: quote.note, totale: quote.totale,
             updated_at: new Date().toISOString(),
           }).eq("id", quote._supabaseId);
       }
+      const fotoInUso = new Set(updated.flatMap(q => (q.photos || []).map(p => p.path)).filter(Boolean));
+      await removeStoragePhotos(fotoPrecedenti.filter(path => !fotoInUso.has(path)));
     } else {
           const { data } = await supabase.from("quotes").insert({
             user_id: session.user.id, numero_preventivo: quote.numero || `P-${Date.now()}`,
-            descrizione: quote.descrizione, items: [...quote.items, { _meta: true, cliente: quote.clientInfo?.nome || quote.cliente, clientInfo: quote.clientInfo, discount: quote.discount, margin: quote.margin, firmaImpresa: quote.firmaImpresa, luogoFirma: quote.luogoFirma, costoTotaleInterno: quote.costoTotaleInterno }], pagamento: quote.pagamento,
+            descrizione: quote.descrizione, items: [...quote.items, { _meta: true, cliente: quote.clientInfo?.nome || quote.cliente, clientInfo: quote.clientInfo, discount: quote.discount, margin: quote.margin, firmaImpresa: quote.firmaImpresa, luogoFirma: quote.luogoFirma, costoTotaleInterno: quote.costoTotaleInterno, photos: metaFoto }], pagamento: quote.pagamento,
             scadenza: quote.scadenza, note: quote.note, totale: quote.totale, stato: "bozza",
           }).select().single();
       const newQuote = data ? { ...quote, _supabaseId: data.id } : quote;
@@ -3988,14 +4049,17 @@ export default function App({ session }) {
     setCurrentView("dettaglio");
   };
 
-  const handleEditQuote = (quote) => {
-    setEditingQuote({ ...quote, index: quote._index });
+  const handleEditQuote = async (quote) => {
+    const photos = await hydratePhotos(quote.photos);
+    setEditingQuote({ ...quote, photos, index: quote._index });
     setCurrentView("modifica");
   };
 
-  const handleDuplicateQuote = (quote) => {
+  const handleDuplicateQuote = async (quote) => {
+    const photos = await hydratePhotos(quote.photos);
     const duplicated = {
       ...quote,
+      photos,
       _supabaseId: undefined,
       _index: undefined,
       index: undefined,
@@ -4008,11 +4072,12 @@ export default function App({ session }) {
   };
 
   const handleDeleteQuote = async (quote, index) => {
-    const updated = quotes.filter((_, i) => i !== index);
-    setQuotes(updated);
+    setQuotes(prev => prev.filter((_, i) => i !== index));
     if (quote._supabaseId) {
       await supabase.from("quotes").delete().eq("id", quote._supabaseId);
     }
+    const fotoInUso = new Set(quotes.filter(q => q !== quote).flatMap(q => (q.photos || []).map(p => p.path)).filter(Boolean));
+    await removeStoragePhotos((quote.photos || []).map(p => p.path).filter(path => path && !fotoInUso.has(path)));
   };
 
   const costoMensile = costiFissi.reduce((sum, item) => {
@@ -4078,7 +4143,7 @@ export default function App({ session }) {
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
       {currentView === "gestione-abbonamento" && <GestioneAbbonamento onNavigate={(v) => setCurrentView(v)} subscriptionStatus={subscriptionStatus} trialEnd={trialEnd} onShowPricing={() => setShowPricing(true)} onCancelSubscription={() => setSubscriptionStatus("expired")} session={session} />}
       {currentView === "invita-amico" && <InvitaAmico onNavigate={(v) => setCurrentView(v)} session={session} referralCode={referralCode} referrals={referrals} />}
-        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} quotes={quotes} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)} userProfile={userProfile} onAddPrice={addPriceToListino} onRememberMatch={rememberComputoMatch} onUpdateClient={updateClient} />}
+        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} quotes={quotes} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={async (q) => generatePDF({ ...q, photos: await hydratePhotos(q.photos) }, userProfile)} onGeneratePDFBlob={async (q) => generatePDF({ ...q, photos: await hydratePhotos(q.photos) }, userProfile, true)} userProfile={userProfile} onAddPrice={addPriceToListino} onRememberMatch={rememberComputoMatch} onUpdateClient={updateClient} />}
         {currentView === "modifica" && editingQuote && (
           <NuovoPreventivo
             prices={prices}
@@ -4086,7 +4151,7 @@ export default function App({ session }) {
             quotes={quotes}
             onSaveQuote={saveQuote}
             onNavigate={setCurrentView}
-            onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)}
+            onDownloadPDF={async (q) => generatePDF({ ...q, photos: await hydratePhotos(q.photos) }, userProfile)} onGeneratePDFBlob={async (q) => generatePDF({ ...q, photos: await hydratePhotos(q.photos) }, userProfile, true)}
             initialData={editingQuote}
             userProfile={userProfile}
             onAddPrice={addPriceToListino}
@@ -4102,7 +4167,7 @@ export default function App({ session }) {
           <QuoteDetailView
             quote={selectedQuote}
             onBack={() => setCurrentView("storico")}
-            onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)}
+            onDownloadPDF={async (q) => generatePDF({ ...q, photos: await hydratePhotos(q.photos) }, userProfile)} onGeneratePDFBlob={async (q) => generatePDF({ ...q, photos: await hydratePhotos(q.photos) }, userProfile, true)}
             onEdit={handleEditQuote}
                 onDuplicate={handleDuplicateQuote}
           />
