@@ -1,0 +1,6 @@
+{
+  "functions": {
+    "api/extractComputo.js": { "maxDuration": 60 },
+    "api/matchComputo.js": { "maxDuration": 60 }
+  }
+}

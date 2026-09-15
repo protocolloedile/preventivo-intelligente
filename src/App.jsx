@@ -6,7 +6,7 @@ import { supabase } from "./supabaseClient";
 const DEFAULT_PRICES = [
   // Demolizioni
   { id: 1, categoria: "Demolizioni", voce: "Demolizione pavimento", unita: "mq", costoInterno: 11, prezzo: 18, note: "Incluso smaltimento", iva: 22 },
-  { id: 2, categoria: "Demolizioni", vce: "Demolizione rivestimento bagno", unita: "mq", costoInterno: 9, prezzo: 15, note: "Pareti e pavimento", iva: 22 },
+  { id: 2, categoria: "Demolizioni", voce: "Demolizione rivestimento bagno", unita: "mq", costoInterno: 9, prezzo: 15, note: "Pareti e pavimento", iva: 22 },
   { id: 3, categoria: "Demolizioni", voce: "Demolizione tramezza",unita: "mq", costoInterno: 13, prezzo: 22, note: "Spessore fino a 12cm", iva: 22 },
   { id: 4, categoria: "Demolizioni", voce: "Rimozione vasca da bagno", unita: "cad", costoInterno: 90, prezzo: 150, note: "Incluso trasporto", iva: 22 },
   { id: 5, categoria: "Demolizioni", voce: "Rimozione sanitari", unita: "cad", costoInterno: 27, prezzo: 45, note: "Per singolo pezzo", iva: 22 },
@@ -94,6 +94,230 @@ async function parseVoiceToQuote(transcript, priceDB, pastQuotes) {
     console.error('Errore selezione materiali AI:', error);
     return null;
   }
+}
+
+// ========== COMPUTO METRICO ==========
+const COMPUTO_MAX_PAGES = 30;
+const COMPUTO_MAX_SIDE = 2000;
+const COMPUTO_BATCH_PAGES = 3;
+const COMPUTO_BATCH_CHARS = 3200000;
+const COMPUTO_PARALLEL = 3;
+
+function drawToJpeg(width, height, draw) {
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(width);
+  canvas.height = Math.round(height);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  return Promise.resolve(draw(ctx, canvas)).then(() => canvas.toDataURL("image/jpeg", 0.8));
+}
+
+async function imageFileToDataUrl(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const el = new window.Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("Immagine non leggibile: " + file.name));
+      el.src = url;
+    });
+    const scale = Math.min(1, COMPUTO_MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = img.naturalWidth * scale;
+    const h = img.naturalHeight * scale;
+    return await drawToJpeg(w, h, (ctx, canvas) => ctx.drawImage(img, 0, 0, canvas.width, canvas.height));
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function pdfFileToDataUrls(file, maxPages) {
+  const pdfjs = await import("pdfjs-dist");
+  const { default: workerUrl } = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+  pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+
+  let pdf;
+  try {
+    pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  } catch (err) {
+    if (err?.name === "PasswordException") throw new Error("Il PDF è protetto da password: rimuovi la protezione e ricaricalo.");
+    throw new Error("PDF non leggibile o danneggiato: " + file.name);
+  }
+
+  try {
+    if (pdf.numPages > maxPages) throw new Error(`Il computo supera il limite di ${COMPUTO_MAX_PAGES} pagine.`);
+    const pages = [];
+    for (let n = 1; n <= pdf.numPages; n++) {
+      const page = await pdf.getPage(n);
+      const base = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: COMPUTO_MAX_SIDE / Math.max(base.width, base.height) });
+      pages.push(await drawToJpeg(viewport.width, viewport.height, (ctx) => page.render({ canvasContext: ctx, viewport }).promise));
+      page.cleanup();
+    }
+    return pages;
+  } finally {
+    pdf.destroy();
+  }
+}
+
+async function postComputoApi(url, body, headers) {
+  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 413) throw new Error("Pagine troppo pesanti da inviare: prova con foto meno grandi.");
+    throw new Error(data.error || "Errore del server (" + res.status + ")");
+  }
+  return data;
+}
+
+async function extractComputoBatch(pages, headers) {
+  try {
+    return await postComputoApi("/api/extractComputo", { images: pages }, headers);
+  } catch (err) {
+    if (pages.length === 1) throw err;
+    const parts = [];
+    for (const page of pages) parts.push(await postComputoApi("/api/extractComputo", { images: [page] }, headers));
+    return { oggetto: parts.find(p => p.oggetto)?.oggetto || "", voci: parts.flatMap(p => p.voci || []) };
+  }
+}
+
+async function mapWithLimit(list, limit, fn) {
+  const out = new Array(list.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, list.length) }, async () => {
+    while (next < list.length) {
+      const i = next++;
+      out[i] = await fn(list[i]);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+async function computoToQuote(files, priceDB) {
+  const listino = (priceDB || []).filter(p => p && p.voce);
+  if (!listino.length) throw new Error("Il tuo database prezzi è vuoto: aggiungi le voci in Prezzi prima di caricare un computo.");
+
+  const pages = [];
+  for (const file of files) {
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (isPdf) pages.push(...await pdfFileToDataUrls(file, COMPUTO_MAX_PAGES - pages.length));
+    else pages.push(await imageFileToDataUrl(file));
+    if (pages.length > COMPUTO_MAX_PAGES) throw new Error(`Il computo supera il limite di ${COMPUTO_MAX_PAGES} pagine.`);
+  }
+
+  const batches = [];
+  let current = [];
+  let chars = 0;
+  for (const page of pages) {
+    if (current.length && (current.length >= COMPUTO_BATCH_PAGES || chars + page.length > COMPUTO_BATCH_CHARS)) {
+      batches.push(current);
+      current = [];
+      chars = 0;
+    }
+    current.push(page);
+    chars += page.length;
+  }
+  if (current.length) batches.push(current);
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
+  if (!token) throw new Error("Sessione scaduta: esci e rientra nell'app.");
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + token };
+
+  const extracted = await mapWithLimit(batches, COMPUTO_PARALLEL, (batch) => extractComputoBatch(batch, headers));
+  const voci = extracted.flatMap(e => e.voci || []);
+  if (!voci.length) throw new Error("Non ho trovato voci di lavorazione nel computo: controlla che il file sia leggibile.");
+
+  const { items } = await postComputoApi("/api/matchComputo", {
+    voci,
+    priceDB: listino.map(p => ({ voce: p.voce, unita: p.unita, categoria: p.categoria, note: p.note, prezzo: p.prezzo, costoInterno: p.costoInterno, iva: p.iva }))
+  }, headers);
+
+  return { items: items || [], oggetto: extracted.find(e => e.oggetto)?.oggetto || "" };
+}
+
+// Deve restare identica a normalizeDescrizione in api/matchComputo.js: e' la chiave della memoria abbinamenti.
+function normalizeDescrizione(text) {
+  return String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .slice(0, 500);
+}
+
+// ========== SALVATAGGIO LISTINO E COSTI FISSI ==========
+const priceFromDb = (row) => ({
+  id: row.id, _dbId: row.id, voce: row.nome || "", categoria: row.categoria || "", unita: row.unita || "cad",
+  prezzo: Number(row.prezzo) || 0, costoInterno: Number(row.costo_interno) || 0, iva: Number(row.iva ?? 22), note: row.note || "",
+});
+const priceToDb = (p, userId) => ({
+  user_id: userId, nome: p.voce || "", categoria: p.categoria || "", unita: p.unita || "cad",
+  prezzo: Number(p.prezzo) || 0, costo_interno: Number(p.costoInterno) || 0, iva: Number(p.iva ?? 22), note: p.note || "",
+});
+const costoFromDb = (row) => ({
+  id: row.id, _dbId: row.id, categoria: row.categoria || "", voce: row.voce || "",
+  importo: Number(row.importo) || 0, frequenza: row.frequenza || "mensile", note: row.note || "",
+});
+const costoToDb = (c, userId) => ({
+  user_id: userId, categoria: c.categoria || "", voce: c.voce || "",
+  importo: Number(c.importo) || 0, frequenza: c.frequenza === "annuale" ? "annuale" : "mensile", note: c.note || "",
+});
+
+async function loadOrSeedRows(table, userId, defaults, toDb, fromDb) {
+  const { data, error } = await supabase.from(table).select("*").eq("user_id", userId)
+    .order("created_at", { ascending: true }).order("id", { ascending: true });
+  if (error) throw error;
+  if (data.length) return data.map(fromDb);
+  const { data: inserted, error: insertError } = await supabase.from(table)
+    .insert(defaults.filter(d => d.voce).map(d => toDb(d, userId))).select("*");
+  if (insertError) throw insertError;
+  return inserted.map(fromDb);
+}
+
+const pendingInserts = new Map();
+
+async function insertRows(table, rows, toDb, userId, setState) {
+  if (!rows.length) return;
+  const request = supabase.from(table).insert(rows.map(r => toDb(r, userId))).select("id")
+    .then(({ data, error }) => { if (error) throw error; return data.map(d => d.id); });
+  rows.forEach((r, i) => pendingInserts.set(table + ":" + r.id, request.then(ids => ids[i]).catch(() => null)));
+  try {
+    const ids = await request;
+    const idMap = new Map(rows.map((r, i) => [r.id, ids[i]]));
+    setState(list => list.map(r => idMap.has(r.id) ? { ...r, _dbId: idMap.get(r.id) } : r));
+  } finally {
+    rows.forEach(r => pendingInserts.delete(table + ":" + r.id));
+  }
+}
+
+async function syncRows(table, prev, next, toDb, userId, setState) {
+  const prevById = new Map(prev.map(r => [r.id, r]));
+  const nextIds = new Set(next.map(r => r.id));
+  const resolveDbId = async (row) => {
+    if (row._dbId != null) return row._dbId;
+    const pending = pendingInserts.get(table + ":" + row.id);
+    return pending ? await pending : null;
+  };
+
+  await insertRows(table, next.filter(r => !prevById.has(r.id)), toDb, userId, setState);
+
+  const changed = next.filter(r => prevById.has(r.id) && prevById.get(r.id) !== r);
+  const withIds = await Promise.all(changed.map(async r => ({ row: r, dbId: await resolveDbId(r) })));
+  await insertRows(table, withIds.filter(x => x.dbId == null).map(x => x.row), toDb, userId, setState);
+  await Promise.all(withIds.filter(x => x.dbId != null).map(async ({ row, dbId }) => {
+    const { error } = await supabase.from(table).update(toDb(row, userId)).eq("id", dbId);
+    if (error) throw error;
+  }));
+
+  await Promise.all(prev.filter(r => !nextIds.has(r.id)).map(async r => {
+    const dbId = await resolveDbId(r);
+    if (dbId == null) return;
+    const { error } = await supabase.from(table).delete().eq("id", dbId);
+    if (error) throw error;
+  }));
 }
 
 // ========== COMPONENTS ==========
@@ -558,7 +782,7 @@ function VoiceRecorder({ onTranscriptComplete }) {
   );
 }
 
-function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF, onBack, transcript, discount, setDiscount, margin, setMargin, clients, scadenza, setScadenza, pagamento, setPagamento, photos, setPhotos, prices, descrizione, setDescrizione, firmaImpresa, setFirmaImpresa, luogoFirma, setLuogoFirma, isEditing, onSaveOnly, onNavigate, isAIProcessing, isModifyRecording, modifyTranscript, startModifyRecording, stopModifyRecording }) {
+function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF, onBack, transcript, discount, setDiscount, margin, setMargin, clients, scadenza, setScadenza, pagamento, setPagamento, photos, setPhotos, prices, descrizione, setDescrizione, firmaImpresa, setFirmaImpresa, luogoFirma, setLuogoFirma, isEditing, onSaveOnly, onNavigate, isAIProcessing, isModifyRecording, modifyTranscript, startModifyRecording, stopModifyRecording, onAddPrice, onRememberMatch }) {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showDBPicker, setShowDBPicker] = useState(false);
   const [dbSearch, setDbSearch] = useState("");
@@ -573,6 +797,8 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
     if (!clientInfo.telefono?.trim() && !clientInfo.email?.trim()) errors.push("Telefono o Email");
     if (!descrizione?.trim()) errors.push("Descrizione lavoro");
     if (!items || items.length === 0) errors.push("Almeno una voce di preventivo");
+    const vociDaPrezzare = items.filter(it => it.daPrezzare && !(it.prezzo > 0)).length;
+    if (vociDaPrezzare > 0) errors.push(`Prezzo delle voci da prezzare (${vociDaPrezzare})`);
     if (!scadenza) errors.push("Data di scadenza");
     const totPerc = pagamento.reduce((s, f) => s + f.percentuale, 0);
     if (totPerc !== 100) errors.push("Modalità di pagamento (totale deve essere 100%)");
@@ -694,6 +920,49 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
 
   const addManualItem = () => {
     setItems([...items, { voce: "Nuova voce", categoria: "Personalizzata", unita: "cad", quantita: 1, prezzo: 0, iva: 22 }]);
+  };
+
+  const [pickerTarget, setPickerTarget] = useState(null);
+  const pickerRef = useRef(null);
+
+  const openPickerFor = (index) => {
+    setPickerTarget(index);
+    setDbSearch("");
+    setShowDBPicker(true);
+    setTimeout(() => pickerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  };
+
+  const applyListinoToItem = (index, p) => {
+    const current = items[index];
+    const updated = [...items];
+    updated[index] = {
+      voce: p.voce, categoria: p.categoria, unita: p.unita, quantita: current.quantita,
+      prezzo: p.prezzo, costoInterno: p.costoInterno || 0, iva: p.iva ?? 22,
+      descrizioneComputo: current.descrizioneComputo,
+    };
+    setItems(updated);
+    if (current.descrizioneComputo && onRememberMatch) onRememberMatch(current.descrizioneComputo, p.voce, p.unita);
+  };
+
+  const addItemToListino = (index) => {
+    const current = items[index];
+    const nome = (current.voce || "").trim();
+    if (!onAddPrice || !nome || !(current.prezzo > 0)) return;
+    if ((prices || []).some(p => (p.voce || "").trim().toLowerCase() === nome.toLowerCase())) {
+      alert("Nel listino esiste già una voce con questo nome: usa \"Scegli dal listino\" per abbinarla.");
+      return;
+    }
+    const categoria = current.categoria && current.categoria !== "Personalizzata" ? current.categoria : "Da computo";
+    const nuova = { voce: nome, categoria, unita: current.unita, prezzo: current.prezzo, costoInterno: current.costoInterno || 0, iva: current.iva ?? 22, note: "" };
+    onAddPrice(nuova);
+    const updated = [...items];
+    updated[index] = {
+      voce: nuova.voce, categoria: nuova.categoria, unita: nuova.unita, quantita: current.quantita,
+      prezzo: nuova.prezzo, costoInterno: nuova.costoInterno, iva: nuova.iva,
+      descrizioneComputo: current.descrizioneComputo,
+    };
+    setItems(updated);
+    if (current.descrizioneComputo && onRememberMatch) onRememberMatch(current.descrizioneComputo, nuova.voce, nuova.unita);
   };
 
   return (
@@ -880,7 +1149,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
             {showAddMenu && (
               <div className="absolute right-0 top-6 z-20 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden w-56">
                 <button
-                  onClick={() => { setShowDBPicker(true); setShowAddMenu(false); }}
+                  onClick={() => { setPickerTarget(null); setShowDBPicker(true); setShowAddMenu(false); }}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-orange-50 transition text-left"
                 >
                   <div className="bg-orange-100 p-1.5 rounded-lg"><Database size={14} className="text-orange-600" /></div>
@@ -939,11 +1208,16 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
 
         {/* Picker dal database prezzi */}
         {showDBPicker && (
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 space-y-2">
+          <div ref={pickerRef} className="bg-orange-50 border border-orange-200 rounded-xl p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-orange-700">Seleziona dal database</p>
-              <button onClick={() => { setShowDBPicker(false); setDbSearch(""); }} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
+              <p className="text-xs font-semibold text-orange-700">{pickerTarget !== null ? "Scegli la voce corretta dal listino" : "Seleziona dal database"}</p>
+              <button onClick={() => { setShowDBPicker(false); setDbSearch(""); setPickerTarget(null); }} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
             </div>
+            {pickerTarget !== null && items[pickerTarget]?.descrizioneComputo && (
+              <p className="text-[11px] text-gray-500 line-clamp-2">
+                Per: {items[pickerTarget].descrizioneComputo}. La scelta verr{"à"} ricordata per i prossimi computi.
+              </p>
+            )}
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-2.5 text-gray-400" />
               <input
@@ -961,9 +1235,14 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                   <button
                     key={p.id}
                     onClick={() => {
-                      setItems([...items, { voce: p.voce, categoria: p.categoria, unita: p.unita, quantita: 1, prezzo: p.prezzo, costoInterno: p.costoInterno || 0, iva: p.iva ?? 22 }]);
+                      if (pickerTarget !== null && items[pickerTarget]) {
+                        applyListinoToItem(pickerTarget, p);
+                      } else {
+                        setItems([...items, { voce: p.voce, categoria: p.categoria, unita: p.unita, quantita: 1, prezzo: p.prezzo, costoInterno: p.costoInterno || 0, iva: p.iva ?? 22 }]);
+                      }
                       setShowDBPicker(false);
                       setDbSearch("");
+                      setPickerTarget(null);
                     }}
                     className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-100 transition flex justify-between items-center"
                   >
@@ -979,8 +1258,17 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
           </div>
         )}
 
+        {items.some(it => it.daPrezzare && !(it.prezzo > 0)) && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+            <AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
+            <p className="text-xs text-red-700">
+              {items.filter(it => it.daPrezzare && !(it.prezzo > 0)).length} voci del computo non hanno un prezzo nel tuo listino: sono evidenziate in rosso, inserisci il prezzo prima di generare il preventivo.
+            </p>
+          </div>
+        )}
+
         {items.map((item, i) => (
-          <div key={i} className={`bg-white border rounded-xl p-3 ${item.categoria === "Personalizzata" ? "border-orange-300 bg-orange-50" : "border-gray-200"}`}>
+          <div key={i} className={`bg-white border rounded-xl p-3 ${item.daPrezzare && !(item.prezzo > 0) ? "border-red-400 bg-red-50" : item.categoria === "Personalizzata" ? "border-orange-300 bg-orange-50" : "border-gray-200"}`}>
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 {item.categoria === "Personalizzata" ? (
@@ -1021,11 +1309,17 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                         <option value={22}>IVA 22%</option>
                       </select>
                     </div>
+                    {item.daPrezzare && !(item.prezzo > 0) && (
+                      <p className="text-[11px] font-semibold text-red-600 mt-1">Da prezzare: voce non presente nel listino</p>
+                    )}
                   </>
                 ) : (
                   <>
                     <p className="font-medium text-gray-800 text-sm">{item.voce}</p>
                     <p className="text-gray-400 text-xs">{item.categoria}</p>
+                    {item.descrizioneComputo && (
+                      <p className="text-gray-400 text-[11px] mt-0.5 line-clamp-2">Dal computo: {item.descrizioneComputo}</p>
+                    )}
                   </>
                 )}
               </div>
@@ -1050,7 +1344,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                   type="number"
                   value={item.prezzo}
                   onChange={(e) => updateItem(i, "prezzo", parseFloat(e.target.value) || 0)}
-                  className="w-20 p-1 border border-gray-200 rounded text-center text-sm focus:border-orange-400 focus:outline-none"
+                  className={`w-20 p-1 border rounded text-center text-sm focus:border-orange-400 focus:outline-none ${item.daPrezzare && !(item.prezzo > 0) ? "border-red-400 bg-white" : "border-gray-200"}`}
                 />
               </div>
               <span className="text-gray-300">=</span>
@@ -1058,6 +1352,29 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
                 € {(item.quantita * item.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
+            {item.descrizioneComputo && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 pt-2 border-t border-dashed border-gray-200">
+                {item.categoria === "Personalizzata" ? (
+                  <>
+                    <button onClick={() => openPickerFor(i)} className="text-[11px] font-medium text-orange-600 hover:text-orange-700 flex items-center gap-1">
+                      <Search size={11} /> Scegli dal listino
+                    </button>
+                    <button
+                      onClick={() => addItemToListino(i)}
+                      disabled={!(item.prezzo > 0)}
+                      title={item.prezzo > 0 ? "" : "Inserisci prima il prezzo"}
+                      className="text-[11px] font-medium text-green-600 hover:text-green-700 flex items-center gap-1 disabled:text-gray-300 disabled:cursor-not-allowed"
+                    >
+                      <Plus size={11} /> Aggiungi al listino
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={() => openPickerFor(i)} className="text-[11px] font-medium text-gray-500 hover:text-orange-600 flex items-center gap-1">
+                    <Edit3 size={11} /> Abbinamento sbagliato? Cambia voce
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -2300,7 +2617,7 @@ function StoricoView({ quotes, onViewQuote, onDeleteQuote }) {
   );
 }
 
-function NuovoPreventivo({ prices, clients, quotes, onSaveQuote, onNavigate, onDownloadPDF, initialData, userProfile }) {
+function NuovoPreventivo({ prices, clients, quotes, onSaveQuote, onNavigate, onDownloadPDF, initialData, userProfile, onAddPrice, onRememberMatch }) {
   const isEditing = !!initialData;
 
   // Scadenza: default 30 giorni da oggi
@@ -2317,6 +2634,7 @@ function NuovoPreventivo({ prices, clients, quotes, onSaveQuote, onNavigate, onD
   const [error, setError] = useState("");
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMode, setLoadingMode] = useState("voce");
   const loadingIntervalRef = useRef(null);
   const [isModifyRecording, setIsModifyRecording] = useState(false);
   const [modifyTranscript, setModifyTranscript] = useState("");
@@ -2448,6 +2766,50 @@ const startModifyRecording = () => {
     }
   };
 
+  const handleComputo = async (files) => {
+    if (!files.length) return;
+    const supportati = files.filter(f => ["application/pdf", "image/jpeg", "image/png"].includes(f.type) || /\.(pdf|jpe?g|png)$/i.test(f.name));
+    if (supportati.length !== files.length) {
+      setError("Formato non supportato: carica solo file PDF, JPG, JPEG o PNG.");
+      return;
+    }
+    setError("");
+    setIsAIProcessing(true);
+    setLoadingMode("computo");
+    setLoadingProgress(0);
+    setStep("loading");
+
+    let progress = 0;
+    if (loadingIntervalRef.current) clearInterval(loadingIntervalRef.current);
+    loadingIntervalRef.current = setInterval(() => {
+      progress += 1;
+      if (progress <= 90) {
+        setLoadingProgress(progress);
+      }
+    }, 500);
+
+    try {
+      const { items: vociComputo, oggetto } = await computoToQuote(supportati, prices);
+      clearInterval(loadingIntervalRef.current);
+      setLoadingProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const testo = oggetto || "Lavori come da computo metrico allegato.";
+      setTranscript(testo);
+      setDescrizione(testo);
+      setItems(vociComputo);
+      setStep("edit");
+    } catch (err) {
+      console.error("Errore computo metrico:", err);
+      clearInterval(loadingIntervalRef.current);
+      setStep("voice");
+      setError(err.message || "Errore nella lettura del computo. Riprova.");
+    } finally {
+      setIsAIProcessing(false);
+      setLoadingProgress(0);
+      setLoadingMode("voce");
+    }
+  };
+
   const handleGeneratePDF = () => {
     const subtotale = items.reduce((sum, item) => sum + item.quantita * item.prezzo, 0);
     const importoMargine = margin.enabled
@@ -2504,9 +2866,35 @@ const startModifyRecording = () => {
         <div className="space-y-4">
           <div>
             <h2 className="font-bold text-gray-800 text-lg">Nuovo Preventivo</h2>
-            <p className="text-gray-400 text-sm">Descrivi il lavoro a voce o per scritto</p>
+            <p className="text-gray-400 text-sm">Descrivi il lavoro a voce o per scritto, oppure carica un computo metrico</p>
           </div>
           <VoiceRecorder onTranscriptComplete={handleTranscript} />
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <div className="flex-1 border-t border-gray-200"></div>
+            oppure
+            <div className="flex-1 border-t border-gray-200"></div>
+          </div>
+          <label className="w-full bg-white border-2 border-dashed border-orange-300 hover:border-orange-500 hover:bg-orange-50 transition rounded-2xl p-4 flex items-center gap-4 cursor-pointer">
+            <div className="bg-orange-100 p-3 rounded-xl">
+              <Upload size={24} className="text-orange-600" />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-gray-800">Carica computo metrico</p>
+              <p className="text-gray-400 text-xs">PDF, JPG, JPEG o PNG: l'AI abbina ogni voce ai tuoi prezzi</p>
+            </div>
+            <ChevronRight size={18} className="ml-auto text-gray-400" />
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                e.target.value = "";
+                handleComputo(files);
+              }}
+            />
+          </label>
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-3">
               <p className="text-red-700 text-sm">{error}</p>
@@ -2566,7 +2954,9 @@ const startModifyRecording = () => {
                 </p>
               </div>
               <p style={{ color: "#9ca3af", fontSize: "13px", maxWidth: "350px", textAlign: "center" }}>
-                Stiamo analizzando la tua descrizione e selezionando i materiali piu' adatti dal nostro listino.
+                {loadingMode === "computo"
+                  ? "Stiamo leggendo il computo metrico e abbinando ogni voce ai prezzi del tuo listino. Può richiedere fino a un minuto."
+                  : "Stiamo analizzando la tua descrizione e selezionando i materiali piu' adatti dal nostro listino."}
               </p>
             </div>
           )}
@@ -2605,6 +2995,8 @@ const startModifyRecording = () => {
             modifyTranscript={modifyTranscript}
             startModifyRecording={startModifyRecording}
             stopModifyRecording={stopModifyRecording}
+            onAddPrice={onAddPrice}
+            onRememberMatch={onRememberMatch}
         />
       )}
 
@@ -3168,6 +3560,11 @@ export default function App({ session }) {
   const [showPricing, setShowPricing] = useState(false);
   const [referralCode, setReferralCode] = useState("");
   const [referrals, setReferrals] = useState([]);
+  const pricesRef = useRef(prices);
+  const costiFissiRef = useRef(costiFissi);
+  const syncReadyRef = useRef({ prices: false, costiFissi: false });
+  pricesRef.current = prices;
+  costiFissiRef.current = costiFissi;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -3319,6 +3716,27 @@ export default function App({ session }) {
             };
           }));
         }
+
+        try {
+          const listino = await loadOrSeedRows("prices", userId, DEFAULT_PRICES, priceToDb, priceFromDb);
+          pricesRef.current = listino;
+          setPrices(listino);
+          syncReadyRef.current.prices = true;
+        } catch (err) {
+          console.error("Errore caricamento prezzi:", err);
+          alert("Non sono riuscito a caricare il tuo listino prezzi: le modifiche di questa sessione non verranno salvate. Ricarica la pagina.");
+        }
+
+        try {
+          const costi = await loadOrSeedRows("costi_fissi", userId, DEFAULT_COSTI_FISSI, costoToDb, costoFromDb);
+          costiFissiRef.current = costi;
+          setCostiFissi(costi);
+          syncReadyRef.current.costiFissi = true;
+        } catch (err) {
+          console.error("Errore caricamento costi fissi:", err);
+          alert("Non sono riuscito a caricare i tuoi costi fissi: le modifiche di questa sessione non verranno salvate. Ricarica la pagina.");
+        }
+
         setDataLoaded(true);
       } catch (err) {
         console.error("Errore caricamento dati:", err);
@@ -3348,6 +3766,46 @@ export default function App({ session }) {
         nome: c.nome || "", codice_fiscale: c.codiceFiscale || "", indirizzo: c.indirizzo || "", telefono: c.telefono || c.whatsapp || "", email: c.email || "", note: c.note || "",
       })));
     }
+  };
+
+  const savePrices = (next) => {
+    const prev = pricesRef.current;
+    pricesRef.current = next;
+    setPrices(next);
+    if (!session?.user?.id || !syncReadyRef.current.prices) return;
+    syncRows("prices", prev, next, priceToDb, session.user.id, setPrices).catch(err => {
+      console.error("Errore salvataggio prezzi:", err);
+      alert("Non sono riuscito a salvare le modifiche ai prezzi. Controlla la connessione e riprova.");
+    });
+  };
+
+  const saveCostiFissi = (next) => {
+    const prev = costiFissiRef.current;
+    costiFissiRef.current = next;
+    setCostiFissi(next);
+    if (!session?.user?.id || !syncReadyRef.current.costiFissi) return;
+    syncRows("costi_fissi", prev, next, costoToDb, session.user.id, setCostiFissi).catch(err => {
+      console.error("Errore salvataggio costi fissi:", err);
+      alert("Non sono riuscito a salvare le modifiche ai costi fissi. Controlla la connessione e riprova.");
+    });
+  };
+
+  const addPriceToListino = (voce) => {
+    savePrices([...pricesRef.current, { ...voce, id: Date.now() + "-" + Math.random().toString(36).slice(2) }]);
+  };
+
+  const rememberComputoMatch = async (descrizione, voce, unita) => {
+    const descrizioneNorm = normalizeDescrizione(descrizione);
+    if (!session?.user?.id || !descrizioneNorm) return;
+    const { error } = await supabase.from("computo_memoria").upsert({
+      user_id: session.user.id,
+      descrizione_norm: descrizioneNorm,
+      descrizione,
+      voce,
+      unita: unita || "",
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id,descrizione_norm" });
+    if (error) console.error("Errore salvataggio memoria abbinamenti:", error);
   };
 
   const handleLogout = async () => {
@@ -3484,7 +3942,7 @@ export default function App({ session }) {
         {currentView === "profilo" && <ProfiloAzienda userProfile={userProfile} setUserProfile={saveProfileToSupabase} onNavigate={setCurrentView} />}
       {currentView === "gestione-abbonamento" && <GestioneAbbonamento onNavigate={(v) => setCurrentView(v)} subscriptionStatus={subscriptionStatus} trialEnd={trialEnd} onShowPricing={() => setShowPricing(true)} onCancelSubscription={() => setSubscriptionStatus("expired")} session={session} />}
       {currentView === "invita-amico" && <InvitaAmico onNavigate={(v) => setCurrentView(v)} session={session} referralCode={referralCode} referrals={referrals} />}
-        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} quotes={quotes} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)} userProfile={userProfile} />}
+        {currentView === "nuovo" && <NuovoPreventivo prices={prices} clients={clients} quotes={quotes} onSaveQuote={saveQuote} onNavigate={setCurrentView} onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)} userProfile={userProfile} onAddPrice={addPriceToListino} onRememberMatch={rememberComputoMatch} />}
         {currentView === "modifica" && editingQuote && (
           <NuovoPreventivo
             prices={prices}
@@ -3495,11 +3953,13 @@ export default function App({ session }) {
             onDownloadPDF={(q) => generatePDF(q, userProfile)} onGeneratePDFBlob={(q) => generatePDF(q, userProfile, true)}
             initialData={editingQuote}
             userProfile={userProfile}
+            onAddPrice={addPriceToListino}
+            onRememberMatch={rememberComputoMatch}
           />
         )}
-        {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={setPrices} /></div>}
+        {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={savePrices} /></div>}
           {currentView === "clienti" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><ClientDatabase clients={clients} setClients={syncClientsToSupabase} /></div>}
-          {currentView === "costifissi" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><CostiFissiView costiFissi={costiFissi} setCostiFissi={setCostiFissi} /></div>}
+          {currentView === "costifissi" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><CostiFissiView costiFissi={costiFissi} setCostiFissi={saveCostiFissi} /></div>}
         {currentView === "storico" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><StoricoView quotes={quotes} onViewQuote={handleViewQuote} onDeleteQuote={handleDeleteQuote} /></div>}
         {currentView === "dettaglio" && selectedQuote && (
           <QuoteDetailView
