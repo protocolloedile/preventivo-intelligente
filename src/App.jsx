@@ -3250,7 +3250,15 @@ function generatePDF(quote, userProfile, returnBlob = false) {
     });
   });
 
-  let totaliRows = `<tr><td style="padding:6px 12px;font-size:12px;color:#6B7280;">Subtotale voci</td><td style="padding:6px 12px;font-size:12px;color:#6B7280;text-align:right;">€ ${fmt(subtotale)}</td></tr>`;
+  // Righe a blocchi (non griglia): lo spazio che html2pdf inserisce prima di una riga pdf-avoid in una griglia diventerebbe una cella vuota.
+  const fotoPdf = (quote.photos || []).filter(p => p.data);
+  const cellaFoto = (p) => `<div style="flex:1;min-width:0;text-align:center;">${p ? `<img src="${p.data}" style="display:inline-block;max-width:100%;max-height:420px;width:auto;height:auto;border-radius:8px;border:1px solid #E5E7EB;" />` : ""}</div>`;
+  const righeFoto = [];
+  for (let i = 0; i < fotoPdf.length; i += 2) {
+    righeFoto.push(`<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">${cellaFoto(fotoPdf[i])}${cellaFoto(fotoPdf[i + 1])}</div>`);
+  }
+
+  let totaliRows =`<tr><td style="padding:6px 12px;font-size:12px;color:#6B7280;">Subtotale voci</td><td style="padding:6px 12px;font-size:12px;color:#6B7280;text-align:right;">€ ${fmt(subtotale)}</td></tr>`;
   if (marginEnabled && importoMargine > 0) {
     totaliRows += `<tr><td style="padding:6px 12px;font-size:12px;color:#2563EB;">Margine ${marginTipo === "percentuale" ? `(${marginPerc}%)` : "fisso"}</td><td style="padding:6px 12px;font-size:12px;color:#2563EB;text-align:right;">+ € ${fmt(importoMargine)}</td></tr>`;
   }
@@ -3325,12 +3333,13 @@ function generatePDF(quote, userProfile, returnBlob = false) {
     </div>`).join("")}
   </div>` : ""}
 
-  ${(quote.photos || []).some(p => p.data) ? `
-  <div style="margin-top:24px;page-break-before:auto;">
-    <p style="margin:0 0 12px;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;">Foto Sopralluogo</p>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-      ${quote.photos.filter(p => p.data).map(p => `<img class="pdf-avoid" src="${p.data}" style="width:100%;height:200px;object-fit:cover;border-radius:8px;border:1px solid #E5E7EB;" />`).join("")}
+  ${righeFoto.length ? `
+  <div style="margin-top:24px;">
+    <div class="pdf-avoid">
+      <p style="margin:0 0 12px;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;">Foto Sopralluogo</p>
+      ${righeFoto[0]}
     </div>
+    ${righeFoto.slice(1).map(riga => `<div class="pdf-avoid">${riga}</div>`).join("")}
   </div>` : ""}
 
   <div class="pdf-avoid" style="margin-top:40px;padding-top:20px;border-top:1px solid #E5E7EB;">
