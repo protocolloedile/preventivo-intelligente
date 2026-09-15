@@ -266,15 +266,21 @@ const costoToDb = (c, userId) => ({
   importo: Number(c.importo) || 0, frequenza: c.frequenza === "annuale" ? "annuale" : "mensile", note: c.note || "",
 });
 
+// Le voci inserite insieme hanno lo stesso created_at: a parità di data ordina per categoria e nome.
+const sortDbRows = (rows) => [...rows].sort((a, b) =>
+  String(a.created_at).localeCompare(String(b.created_at)) ||
+  String(a.categoria || "").localeCompare(String(b.categoria || "")) ||
+  String(a.nome ?? a.voce ?? "").localeCompare(String(b.nome ?? b.voce ?? ""))
+);
+
 async function loadOrSeedRows(table, userId, defaults, toDb, fromDb) {
-  const { data, error } = await supabase.from(table).select("*").eq("user_id", userId)
-    .order("created_at", { ascending: true }).order("id", { ascending: true });
+  const { data, error } = await supabase.from(table).select("*").eq("user_id", userId);
   if (error) throw error;
-  if (data.length) return data.map(fromDb);
+  if (data.length) return sortDbRows(data).map(fromDb);
   const { data: inserted, error: insertError } = await supabase.from(table)
     .insert(defaults.filter(d => d.voce).map(d => toDb(d, userId))).select("*");
   if (insertError) throw insertError;
-  return inserted.map(fromDb);
+  return sortDbRows(inserted).map(fromDb);
 }
 
 const pendingInserts = new Map();
