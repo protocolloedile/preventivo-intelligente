@@ -694,7 +694,7 @@ const clientDaAnagrafica = (c) => ({
   email: c.email || "", codiceFiscale: c.codiceFiscale || "", tipo: c.tipo || "Privato",
 });
 
-function NumberInput({ value, onChange, onFocus, onBlur, ...props }) {
+function NumberInput({ value, onChange, onFocus, onBlur, allowEmpty = false, ...props }) {
   const toText = (v) => (v === "" || v === null || v === undefined || Number.isNaN(Number(v)) ? "" : String(v));
   const [text, setText] = useState(toText(value));
   const [focused, setFocused] = useState(false);
@@ -725,9 +725,15 @@ function NumberInput({ value, onChange, onFocus, onBlur, ...props }) {
         if (dot !== -1) t = t.slice(0, dot + 1) + t.slice(dot + 1).replace(/\./g, "");
         t = t.replace(/^0+(?=\d)/, "");
         setText(t);
-        onChange(toNumber(t));
+        onChange(allowEmpty && t === "" ? "" : toNumber(t));
       }}
       onBlur={(e) => {
+        if (allowEmpty && text === "") {
+          setFocused(false);
+          onChange("");
+          onBlur?.(e);
+          return;
+        }
         const n = toNumber(text);
         setText(String(n));
         setFocused(false);
@@ -1764,7 +1770,7 @@ function PriceDatabase({ prices, setPrices }) {
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
   const [showAdd, setShowAdd] = useState(false);
-  const [newItem, setNewItem] = useState({ categoria: "", voce: "", unita: "mq", costoInterno: 0, prezzo: 0, note: "", iva: 22 });
+  const [newItem, setNewItem] = useState({ categoria: "", voce: "", unita: "mq", costoInterno: "", prezzo: "", note: "", iva: 22 });
   const ivaOptions = [0, 4, 10, 22];
 
   const categories = [...new Set(prices.map(p => p.categoria))];
@@ -1788,8 +1794,8 @@ function PriceDatabase({ prices, setPrices }) {
 
   const addItem = () => {
     if (newItem.voce && newItem.categoria) {
-      setPrices([...prices, { ...newItem, id: Date.now(), costoInterno: parseFloat(newItem.costoInterno), prezzo: parseFloat(newItem.prezzo) }]);
-      setNewItem({ categoria: "", voce: "", unita: "mq", costoInterno: 0, prezzo: 0, note: "", iva: 22 });
+      setPrices([...prices, { ...newItem, id: Date.now(), costoInterno: parseFloat(newItem.costoInterno) || 0, prezzo: parseFloat(newItem.prezzo) || 0 }]);
+      setNewItem({ categoria: "", voce: "", unita: "mq", costoInterno: "", prezzo: "", note: "", iva: 22 });
       setShowAdd(false);
     }
   };
@@ -1840,8 +1846,8 @@ function PriceDatabase({ prices, setPrices }) {
               <option value="kg">kg</option>
               <option value="ora">ora</option>
             </select>
-            <NumberInput value={newItem.costoInterno} onChange={(n) => setNewItem(prev => ({...prev, costoInterno: n}))} placeholder="Costo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
-            <NumberInput value={newItem.prezzo} onChange={(n) => setNewItem(prev => ({...prev, prezzo: n}))} placeholder="Prezzo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+            <NumberInput allowEmpty value={newItem.costoInterno} onChange={(n) => setNewItem(prev => ({...prev, costoInterno: n}))} placeholder="Costo di acquisto (€)" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+            <NumberInput allowEmpty value={newItem.prezzo} onChange={(n) => setNewItem(prev => ({...prev, prezzo: n}))} placeholder="Prezzo di vendita (€)" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
           </div>
           <input value={newItem.note} onChange={(e) => setNewItem({...newItem, note: e.target.value})} placeholder="Note (opzionale)" className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
           <div className="flex items-center gap-2">
@@ -2473,7 +2479,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
   const [showAdd, setShowAdd] = useState(false);
-  const [newItem, setNewItem] = useState({ categoria: "", voce: "", importo: 0, frequenza: "mensile", note: "" });
+  const [newItem, setNewItem] = useState({ categoria: "", voce: "", importo: "", frequenza: "mensile", note: "" });
   const frequenzaOptions = ["mensile", "annuale"];
 
   const categories = [...new Set(costiFissi.map(c => c.categoria))];
@@ -2497,8 +2503,8 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
 
   const addItem = () => {
     if (newItem.voce && newItem.categoria) {
-      setCostiFissi([...costiFissi, { ...newItem, id: Date.now(), importo: parseFloat(newItem.importo) }]);
-      setNewItem({ categoria: "", voce: "", importo: 0, frequenza: "mensile", note: "" });
+      setCostiFissi([...costiFissi, { ...newItem, id: Date.now(), importo: parseFloat(newItem.importo) || 0 }]);
+      setNewItem({ categoria: "", voce: "", importo: "", frequenza: "mensile", note: "" });
       setShowAdd(false);
     }
   };
@@ -2557,7 +2563,7 @@ function CostiFissiView({ costiFissi, setCostiFissi }) {
           )}
           <input value={newItem.voce} onChange={(e) => setNewItem({...newItem, voce: e.target.value})} placeholder="Nome voce" className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
           <div className="flex gap-2">
-            <NumberInput value={newItem.importo} onChange={(n) => setNewItem(prev => ({...prev, importo: n}))} placeholder="Importo €" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+            <NumberInput allowEmpty value={newItem.importo} onChange={(n) => setNewItem(prev => ({...prev, importo: n}))} placeholder="Importo (€)" className="flex-1 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
             <select value={newItem.frequenza} onChange={(e) => setNewItem({...newItem, frequenza: e.target.value})} className="p-2 border border-orange-200 rounded-lg text-sm focus:outline-none">
               <option value="mensile">Mensile</option>
               <option value="annuale">Annuale</option>
