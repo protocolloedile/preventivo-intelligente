@@ -1832,7 +1832,7 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
 // Deve restare allineata a ADMIN_EMAILS in api/importPrezzario.js.
 const ADMIN_PREZZARI = ["protocolloedile@gmail.com", "andreawii.ai@gmail.com"];
 
-const REGIONI_PREZZARIO = ["Lombardia", "Friuli-Venezia Giulia", "Abruzzo", "Sicilia"];
+const REGIONI_PREZZARIO = ["Lombardia", "Toscana", "Sardegna", "Bolzano", "Friuli-Venezia Giulia", "Abruzzo", "Sicilia"];
 
 const ETICHETTE_PREZZARIO = { materiale: "materiale", manodopera: "manodopera", nolo: "nolo", provvisionale: "opere provvisionali", altro: "altro" };
 
