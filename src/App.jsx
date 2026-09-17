@@ -1832,6 +1832,8 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
 // Deve restare allineata a ADMIN_EMAILS in api/importPrezzario.js.
 const ADMIN_PREZZARI = ["protocolloedile@gmail.com", "andreawii.ai@gmail.com"];
 
+const ETICHETTE_PREZZARIO = { materiale: "materiale", manodopera: "manodopera", nolo: "nolo", provvisionale: "opere provvisionali", altro: "altro" };
+
 const UNITA_PREZZARIO = { "m²": "mq", m2: "mq", "m³": "mc", m3: "mc", m: "ml", mt: "ml" };
 
 function unitaListino(u) {
@@ -1855,7 +1857,6 @@ function PrezzarioRegionale({ prices, setPrices, session }) {
   const [regione, setRegione] = useState("Lombardia");
   const [versione, setVersione] = useState(null);
   const [query, setQuery] = useState("");
-  const [tipologia, setTipologia] = useState("opera");
   const [risultati, setRisultati] = useState([]);
   const [cercando, setCercando] = useState(false);
   const [errore, setErrore] = useState("");
@@ -1882,14 +1883,15 @@ function PrezzarioRegionale({ prices, setPrices, session }) {
       .select("codice, descrizione, unita, prezzo, tipologia, capitolo")
       .eq("regione", regione)
       .limit(40);
-    if (tipologia !== "tutte") richiesta = richiesta.eq("tipologia", tipologia);
     richiesta = /^LOM/i.test(q)
       ? richiesta.ilike("codice", "%" + q + "%")
       : richiesta.textSearch("ricerca", q, { type: "websearch", config: "italian" });
     const { data, error } = await richiesta;
     setCercando(false);
     if (error) { setErrore("Ricerca non riuscita: " + error.message); return; }
-    setRisultati(data || []);
+    // Prima le opere compiute: sono quelle che finiscono davvero in preventivo.
+    const ordinate = [...(data || [])].sort((a, b) => (a.tipologia === "opera" ? 0 : 1) - (b.tipologia === "opera" ? 0 : 1));
+    setRisultati(ordinate);
     if (!data || data.length === 0) setErrore("Nessuna voce trovata: prova con parole diverse.");
   };
 
@@ -1956,21 +1958,10 @@ function PrezzarioRegionale({ prices, setPrices, session }) {
 
       {aperto && (
         <>
-          <div className="flex gap-2">
+          <form onSubmit={cerca} className="flex gap-2">
             <select value={regione} onChange={(e) => setRegione(e.target.value)} className="p-2 border border-gray-200 rounded-lg text-sm focus:outline-none">
               <option value="Lombardia">Lombardia</option>
             </select>
-            <select value={tipologia} onChange={(e) => setTipologia(e.target.value)} className="p-2 border border-gray-200 rounded-lg text-sm focus:outline-none">
-              <option value="opera">Opere compiute</option>
-              <option value="materiale">Materiali</option>
-              <option value="manodopera">Manodopera</option>
-              <option value="nolo">Noli e macchinari</option>
-              <option value="provvisionale">Ponteggi e provvisionali</option>
-              <option value="tutte">Tutte le voci</option>
-            </select>
-          </div>
-
-          <form onSubmit={cerca} className="flex gap-2">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -1991,7 +1982,7 @@ function PrezzarioRegionale({ prices, setPrices, session }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm text-gray-800">{vocePerListino(v.descrizione)}</p>
-                      <p className="text-[11px] text-gray-400 mt-1">{v.codice} · {v.capitolo}</p>
+                      <p className="text-[11px] text-gray-400 mt-1">{v.codice} · {v.capitolo}{v.tipologia !== "opera" ? " · " + ETICHETTE_PREZZARIO[v.tipologia] : ""}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-bold text-gray-800 text-sm">€ {Number(v.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</p>
