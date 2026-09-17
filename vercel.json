@@ -1,6 +1,13 @@
 {
   "functions": {
-    "api/extractComputo.js": { "maxDuration": 60 },
-    "api/matchComputo.js": { "maxDuration": 60 }
+    "api/extractComputo.js": {
+      "maxDuration": 60
+    },
+    "api/matchComputo.js": {
+      "maxDuration": 60
+    },
+    "api/importPrezzario.js": {
+      "maxDuration": 60
+    }
   }
 }

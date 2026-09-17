@@ -1829,7 +1829,220 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
   );
 }
 
-function PriceDatabase({ prices, setPrices }) {
+const UNITA_PREZZARIO = { "m²": "mq", m2: "mq", "m³": "mc", m3: "mc", m: "ml", mt: "ml" };
+
+function unitaListino(u) {
+  const k = String(u || "").trim().toLowerCase();
+  return UNITA_PREZZARIO[k] || k || "cad";
+}
+
+// Le descrizioni del prezzario sono lunghe: per il listino tiene solo la parte "OPERA".
+function vocePerListino(descrizione) {
+  let t = String(descrizione || "").replace(/\s+/g, " ").trim().replace(/^OPERA:\s*/i, "");
+  for (const tag of ["LAVORO:", "SPECIFICHE TECNICHE:", "INCLUSO:", "ESCLUSO:", "MODALITA"]) {
+    const i = t.toUpperCase().indexOf(tag);
+    if (i > 0) t = t.slice(0, i);
+  }
+  t = t.trim().replace(/[.;,]+$/, "");
+  return t.length > 160 ? t.slice(0, 157) + "…" : t;
+}
+
+function PrezzarioRegionale({ prices, setPrices, session }) {
+  const [aperto, setAperto] = useState(false);
+  const [regione, setRegione] = useState("Lombardia");
+  const [versione, setVersione] = useState(null);
+  const [query, setQuery] = useState("");
+  const [tipologia, setTipologia] = useState("opera");
+  const [risultati, setRisultati] = useState([]);
+  const [cercando, setCercando] = useState(false);
+  const [errore, setErrore] = useState("");
+  const [voceAperta, setVoceAperta] = useState(null);
+  const [form, setForm] = useState({ categoria: "", nuovaCategoria: "", ricarico: 20 });
+  const [importStato, setImportStato] = useState("");
+  const isAdmin = (session?.user?.email || "").toLowerCase() === "protocolloedile@gmail.com";
+  const categorie = [...new Set((prices || []).map(p => p.categoria).filter(Boolean))];
+
+  const caricaVersione = useCallback(async (reg) => {
+    const { data } = await supabase.from("prezzari_versioni").select("*").eq("regione", reg).maybeSingle();
+    setVersione(data || null);
+  }, []);
+
+  useEffect(() => { caricaVersione(regione); }, [regione, caricaVersione]);
+
+  const cerca = async (e) => {
+    e?.preventDefault?.();
+    const q = query.trim();
+    if (q.length < 3) { setErrore("Scrivi almeno 3 lettere."); return; }
+    setCercando(true); setErrore(""); setRisultati([]); setVoceAperta(null);
+    let richiesta = supabase
+      .from("prezzari_regionali")
+      .select("codice, descrizione, unita, prezzo, tipologia, capitolo")
+      .eq("regione", regione)
+      .limit(40);
+    if (tipologia !== "tutte") richiesta = richiesta.eq("tipologia", tipologia);
+    richiesta = /^LOM/i.test(q)
+      ? richiesta.ilike("codice", "%" + q + "%")
+      : richiesta.textSearch("ricerca", q, { type: "websearch", config: "italian" });
+    const { data, error } = await richiesta;
+    setCercando(false);
+    if (error) { setErrore("Ricerca non riuscita: " + error.message); return; }
+    setRisultati(data || []);
+    if (!data || data.length === 0) setErrore("Nessuna voce trovata: prova con parole diverse.");
+  };
+
+  const aggiungi = (voce) => {
+    const categoria = (form.categoria === "__new" ? form.nuovaCategoria : form.categoria).trim() || ("Prezzario " + regione);
+    const ricarico = Number(form.ricarico) || 0;
+    const vendita = Math.round(voce.prezzo * (1 + ricarico / 100) * 100) / 100;
+    setPrices([...(prices || []), {
+      id: Date.now() + "-" + Math.random().toString(36).slice(2),
+      categoria,
+      voce: vocePerListino(voce.descrizione),
+      unita: unitaListino(voce.unita),
+      costoInterno: voce.prezzo,
+      prezzo: vendita,
+      note: "Prezzario " + regione + " " + (versione?.edizione || "") + " · " + voce.codice,
+      iva: 22,
+    }]);
+    setVoceAperta(null);
+  };
+
+  const importa = async () => {
+    if (!window.confirm("Aggiornare il prezzario " + regione + "? I dati sono condivisi da tutti gli account.")) return;
+    setImportStato("Preparazione…");
+    try {
+      const { data: s } = await supabase.auth.getSession();
+      const headers = { "Content-Type": "application/json", Authorization: "Bearer " + (s?.session?.access_token || "") };
+      const chiama = async (body) => {
+        const r = await fetch("/api/importPrezzario", { method: "POST", headers, body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || "Errore del server (" + r.status + ")");
+        return d;
+      };
+      const info = await chiama({ regione });
+      const parti = info?.indice?.parti || 0;
+      for (let p = 1; p <= parti; p++) {
+        setImportStato("Caricamento " + p + " di " + parti + "…");
+        await chiama({ regione, parte: p });
+      }
+      await caricaVersione(regione);
+      setImportStato("Prezzario aggiornato.");
+    } catch (err) {
+      setImportStato("Errore: " + err.message);
+    }
+  };
+
+  return (
+    <div className="bg-white border-2 border-gray-100 rounded-2xl p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold text-gray-800 text-sm">Prezzario regionale</p>
+          <p className="text-gray-400 text-xs">
+            {versione
+              ? versione.regione + " · edizione " + versione.edizione + " · " + Number(versione.voci || 0).toLocaleString("it-IT") + " voci · aggiornato il " + new Date(versione.aggiornato_il).toLocaleDateString("it-IT")
+              : "Prezzario non ancora caricato per questa regione"}
+          </p>
+        </div>
+        <button
+          onClick={() => setAperto(!aperto)}
+          className="shrink-0 text-xs font-semibold px-3 py-2 rounded-xl bg-orange-50 text-orange-600 hover:bg-orange-100 transition"
+        >
+          {aperto ? "Chiudi" : "Consulta"}
+        </button>
+      </div>
+
+      {aperto && (
+        <>
+          <div className="flex gap-2">
+            <select value={regione} onChange={(e) => setRegione(e.target.value)} className="p-2 border border-gray-200 rounded-lg text-sm focus:outline-none">
+              <option value="Lombardia">Lombardia</option>
+            </select>
+            <select value={tipologia} onChange={(e) => setTipologia(e.target.value)} className="p-2 border border-gray-200 rounded-lg text-sm focus:outline-none">
+              <option value="opera">Opere compiute</option>
+              <option value="materiale">Materiali</option>
+              <option value="manodopera">Manodopera</option>
+              <option value="nolo">Noli e macchinari</option>
+              <option value="provvisionale">Ponteggi e provvisionali</option>
+              <option value="tutte">Tutte le voci</option>
+            </select>
+          </div>
+
+          <form onSubmit={cerca} className="flex gap-2">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cerca: es. intonaco, massetto, LOM261…"
+              className="flex-1 p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange-400"
+            />
+            <button type="submit" disabled={cercando} className="bg-orange-500 text-white px-4 rounded-lg text-sm font-semibold hover:bg-orange-600 transition disabled:opacity-60">
+              {cercando ? "…" : "Cerca"}
+            </button>
+          </form>
+
+          {errore && <p className="text-xs text-gray-500">{errore}</p>}
+
+          {risultati.length > 0 && (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {risultati.map((v) => (
+                <div key={v.codice} className="border border-gray-100 rounded-xl p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm text-gray-800">{vocePerListino(v.descrizione)}</p>
+                      <p className="text-[11px] text-gray-400 mt-1">{v.codice} · {v.capitolo}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-gray-800 text-sm">€ {Number(v.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</p>
+                      <p className="text-[11px] text-gray-400">/{unitaListino(v.unita)}</p>
+                    </div>
+                  </div>
+                  {voceAperta === v.codice ? (
+                    <div className="mt-3 bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+                      <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })} className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none">
+                        <option value="">Categoria…</option>
+                        {categorie.map(c => <option key={c} value={c}>{c}</option>)}
+                        <option value="__new">+ Nuova categoria</option>
+                      </select>
+                      {form.categoria === "__new" && (
+                        <input value={form.nuovaCategoria} onChange={(e) => setForm({ ...form, nuovaCategoria: e.target.value })} placeholder="Nome della nuova categoria" className="w-full p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-600">Ricarico</span>
+                        <NumberInput value={form.ricarico} onChange={(n) => setForm({ ...form, ricarico: n })} allowEmpty className="w-20 p-2 border border-orange-200 rounded-lg text-sm focus:outline-none" />
+                        <span className="text-xs text-gray-600">%</span>
+                        <span className="ml-auto text-sm font-semibold text-gray-800">
+                          Vendita € {(Number(v.prezzo) * (1 + (Number(form.ricarico) || 0) / 100)).toLocaleString("it-IT", { maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => aggiungi(v)} className="flex-1 bg-orange-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-orange-600 transition">Aggiungi</button>
+                        <button onClick={() => setVoceAperta(null)} className="px-3 py-2 text-sm text-gray-500">Annulla</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => setVoceAperta(v.codice)} className="mt-2 text-xs font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1">
+                      <Plus size={14} /> Aggiungi al mio listino
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isAdmin && (
+            <div className="border-t border-gray-100 pt-3 flex items-center gap-3">
+              <button onClick={importa} className="text-xs font-semibold text-gray-500 hover:text-orange-600">
+                Aggiorna prezzario dal file ufficiale
+              </button>
+              {importStato && <span className="text-xs text-gray-400">{importStato}</span>}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function PriceDatabase({ prices, setPrices, session }) {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
@@ -1888,6 +2101,8 @@ function PriceDatabase({ prices, setPrices }) {
           <span className="font-semibold">Inserisci qui sotto i costi di acquisto dei diversi materiali</span> e successivamente il costo di vendita con il tuo ricarico/guadagno.<br/><br/>Nel preventivo compariranno solo i prezzi di vendita.
         </p>
       </div>
+
+      <PrezzarioRegionale prices={prices} setPrices={setPrices} session={session} />
 
       {showAdd && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-2">
@@ -4241,7 +4456,7 @@ export default function App({ session }) {
             onUpdateClient={updateClient}
           />
         )}
-        {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={savePrices} /></div>}
+        {currentView === "database" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><PriceDatabase prices={prices} setPrices={savePrices} session={session} /></div>}
           {currentView === "clienti" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><ClientDatabase clients={clients} setClients={saveClients} /></div>}
           {currentView === "costifissi" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><CostiFissiView costiFissi={costiFissi} setCostiFissi={saveCostiFissi} /></div>}
         {currentView === "storico" && <div><button onClick={() => setCurrentView("home")} className="flex items-center gap-1 text-orange-500 hover:text-orange-600 mb-2 px-5 pt-4"><ArrowLeft size={20} /><span className="text-sm">Indietro</span></button><StoricoView quotes={quotes} onViewQuote={handleViewQuote} onDeleteQuote={handleDeleteQuote} /></div>}
