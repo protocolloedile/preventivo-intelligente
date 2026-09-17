@@ -1829,6 +1829,9 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
   );
 }
 
+// Deve restare allineata a ADMIN_EMAILS in api/importPrezzario.js.
+const ADMIN_PREZZARI = ["protocolloedile@gmail.com", "andreawii.ai@gmail.com"];
+
 const UNITA_PREZZARIO = { "m²": "mq", m2: "mq", "m³": "mc", m3: "mc", m: "ml", mt: "ml" };
 
 function unitaListino(u) {
@@ -1859,7 +1862,7 @@ function PrezzarioRegionale({ prices, setPrices, session }) {
   const [voceAperta, setVoceAperta] = useState(null);
   const [form, setForm] = useState({ categoria: "", nuovaCategoria: "", ricarico: 20 });
   const [importStato, setImportStato] = useState("");
-  const isAdmin = (session?.user?.email || "").toLowerCase() === "protocolloedile@gmail.com";
+  const isAdmin = ADMIN_PREZZARI.includes((session?.user?.email || "").toLowerCase());
   const categorie = [...new Set((prices || []).map(p => p.categoria).filter(Boolean))];
 
   const caricaVersione = useCallback(async (reg) => {
