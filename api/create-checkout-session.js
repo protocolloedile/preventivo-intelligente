@@ -29,7 +29,7 @@ export default async function handler(req, res) {
               name: planType === "annual" ? "Preventivo Intelligente - Pro Annuale" : "Preventivo Intelligente - Pro Mensile",
               description: "Accesso completo a tutte le funzionalità",
             },
-            unit_amount: planType === "annual" ? 29700 : 4700,
+            unit_amount: planType === "annual" ? 60000 : 10000,
             recurring: { interval: planType === "annual" ? "year" : "month" },
           },
           quantity: 1,

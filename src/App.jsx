@@ -384,7 +384,7 @@ function Sidebar({ currentView, onNavigate, onGoToNuovo, userProfile, onLogout }
   const nomeAzienda = userProfile?.nomeAzienda || "Protocollo Edile";
   const navItems = [
     { key: "home", label: "Home", icon: Home },
-    { key: "nuovo", label: "Nuovo Preventivo", icon: Mic, action: onGoToNuovo },
+    { key: "nuovo", label: "Nuovo Preventivo", icon: Plus, action: onGoToNuovo },
     { key: "database", label: "Prezzi", icon: Database },
     { key: "clienti", label: "Clienti", icon: Users },
     { key: "storico", label: "Storico", icon: FileText },
@@ -483,11 +483,11 @@ function HomeView({ onNavigate, onGoToNuovo, stats, userProfile, trialEnd, subsc
 
       <button onClick={onGoToNuovo} className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white p-5 md:p-6 rounded-2xl flex items-center gap-4 shadow-lg hover:shadow-xl transition transform hover:scale-[1.01] active:scale-[0.98]">
         <div className="bg-white/20 p-3 rounded-xl">
-          <Mic size={28} />
+          <Plus size={28} />
         </div>
         <div className="text-left">
           <p className="font-bold text-lg">Nuovo Preventivo</p>
-          <p className="text-orange-100 text-sm">Parla e l'AI crea il preventivo</p>
+          <p className="text-orange-100 text-sm">A voce, scritto a mano o da computo metrico</p>
         </div>
         <ChevronRight size={20} className="ml-auto" />
       </button>
@@ -528,7 +528,7 @@ function HomeView({ onNavigate, onGoToNuovo, stats, userProfile, trialEnd, subsc
         {subscriptionStatus === "trialing" && trialEnd && (
           <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center space-y-2 flex flex-col justify-center">
             <p className="text-sm text-gray-600">Il tuo abbonamento gratuito scadrà il <span className="font-bold text-orange-600">{new Date(trialEnd).toLocaleDateString("it-IT")}</span></p>
-            <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Abbonati ora a 47€/mese →</button>
+            <button onClick={onShowPricing} className="text-orange-500 font-semibold text-sm hover:underline">Abbonati ora a 100€/mese →</button>
           </div>
         )}
       </div>
@@ -809,12 +809,12 @@ function NumberInput({ value, onChange, onFocus, onBlur, allowEmpty = false, ...
   );
 }
 
-function VoiceRecorder({ onTranscriptComplete }) {
+function VoiceRecorder({ onTranscriptComplete, modo = "voce" }) {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [manualInput, setManualInput] = useState("");
   const speechAvailable = typeof window !== "undefined" && ("webkitSpeechRecognition" in window || "SpeechRecognition" in window);
-  const [useManual, setUseManual] = useState(!speechAvailable);
+  const [useManual, setUseManual] = useState(modo === "mano" || !speechAvailable);
   const recognitionRef = useRef(null);
 
   const startRecording = useCallback(() => {
@@ -887,9 +887,6 @@ function VoiceRecorder({ onTranscriptComplete }) {
             </div>
           )}
 
-          <button onClick={() => setUseManual(true)} className="text-xs text-gray-400 underline w-full text-center">
-            Preferisco scrivere a mano
-          </button>
         </>
       ) : (
         <>
@@ -899,9 +896,6 @@ function VoiceRecorder({ onTranscriptComplete }) {
             placeholder="Descrivi il lavoro... Es: Ristrutturazione completa del bagno, sostituzione vasca con doccia, nuove piastrelle 25mq, rifacimento impianto idraulico"
             className="w-full h-32 p-4 border-2 border-gray-200 rounded-xl text-sm focus:border-orange-400 focus:ring-0 focus:outline-none resize-none text-gray-700"
           />
-          <button onClick={() => { setUseManual(false); setManualInput(""); }} className="text-xs text-gray-400 underline w-full text-center">
-            Usa il microfono
-          </button>
         </>
       )}
 
@@ -2167,7 +2161,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
               <p className="text-sm text-gray-500">Per imprenditori edili</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-orange-600">€47</p>
+              <p className="text-2xl font-bold text-orange-600">€100</p>
               <p className="text-xs text-gray-400">/mese</p>
             </div>
           </div>
@@ -2191,22 +2185,22 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
           onClick={() => setSelectedPlan("annual")}
           className={"bg-white rounded-2xl shadow-lg p-6 mb-4 cursor-pointer border-2 transition relative " + (selectedPlan === "annual" ? "border-green-500 ring-2 ring-green-200" : "border-gray-200")}
         >
-          <div className="absolute -top-3 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">RISPARMIA 47%</div>
+          <div className="absolute -top-3 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">RISPARMIA 50%</div>
           <div className="flex justify-between items-start mb-3">
             <div>
               <h3 className="text-xl font-bold text-gray-800">Pro Annuale</h3>
               <p className="text-gray-500 text-sm">Per imprenditori edili</p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-green-600">€297</p>
+              <p className="text-3xl font-bold text-green-600">€600</p>
               <p className="text-gray-500 text-sm">/anno</p>
-              <p className="text-gray-400 text-xs line-through">€564/anno</p>
+              <p className="text-gray-400 text-xs line-through">€1.200/anno</p>
             </div>
           </div>
-          <p className="text-green-600 text-sm font-semibold mb-3">Solo €24,75/mese invece di €47/mese</p>
+          <p className="text-green-600 text-sm font-semibold mb-3">Solo €50/mese invece di €100/mese</p>
           <ul className="space-y-2 text-sm text-gray-600">
             <li>✔ Tutto quello del Pro Mensile</li>
-            <li>✔ Risparmio di €267 all'anno</li>
+            <li>✔ Risparmio di €600 all'anno</li>
             <li>✔ Supporto prioritario</li>
           </ul>
         </div>
@@ -2267,7 +2261,7 @@ function PricingPage({ onSubscribe, onLogout, onBack, userEmail }) {
                 disabled={loading}
                 className="w-full bg-orange-500 text-white font-semibold py-3 rounded-xl hover:bg-orange-600 transition disabled:opacity-50"
               >
-                {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : (selectedPlan === "annual" ? "Inizia 14 Giorni Gratis - €297/anno" : "Inizia 14 Giorni Gratis - €47/mese")}
+                {loading ? "Reindirizzamento a Stripe..." : promoCode ? "Inizia la Prova Gratuita" : (selectedPlan === "annual" ? "Inizia 14 Giorni Gratis - €600/anno" : "Inizia 14 Giorni Gratis - €100/mese")}
               </button>
               <p className="text-xs text-center text-gray-400 mt-2">
                 {promoCode ? "Il codice verrà verificato all'attivazione" : "Pagamento sicuro tramite Stripe"}
@@ -2803,6 +2797,7 @@ function NuovoPreventivo({ prices, clients, quotes, onSaveQuote, onNavigate, onD
   const [transcript, setTranscript] = useState(isEditing ? (initialData.descrizione || "") : "");
   const [clientInfo, setClientInfo] = useState(isEditing ? (initialData.clientInfo || { nome: "", indirizzo: "", telefono: "" }) : { nome: "", indirizzo: "", telefono: "" });
   const [error, setError] = useState("");
+  const [metodo, setMetodo] = useState(null);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMode, setLoadingMode] = useState("voce");
@@ -3037,35 +3032,65 @@ const startModifyRecording = () => {
         <div className="space-y-4">
           <div>
             <h2 className="font-bold text-gray-800 text-lg">Nuovo Preventivo</h2>
-            <p className="text-gray-400 text-sm">Descrivi il lavoro a voce o per scritto, oppure carica un computo metrico</p>
+            <p className="text-gray-400 text-sm">
+              {metodo ? "Descrivi il lavoro, poi genera il preventivo" : "Scegli come vuoi creare il preventivo"}
+            </p>
           </div>
-          <VoiceRecorder onTranscriptComplete={handleTranscript} />
-          <div className="flex items-center gap-3 text-xs text-gray-400">
-            <div className="flex-1 border-t border-gray-200"></div>
-            oppure
-            <div className="flex-1 border-t border-gray-200"></div>
-          </div>
-          <label className="w-full bg-white border-2 border-dashed border-orange-300 hover:border-orange-500 hover:bg-orange-50 transition rounded-2xl p-4 flex items-center gap-4 cursor-pointer">
-            <div className="bg-orange-100 p-3 rounded-xl">
-              <Upload size={24} className="text-orange-600" />
+
+          {!metodo ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <button
+                onClick={() => setMetodo("voce")}
+                className="bg-white border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition rounded-2xl p-5 flex flex-col items-center text-center gap-2"
+              >
+                <div className="bg-orange-100 p-3 rounded-xl">
+                  <Mic size={24} className="text-orange-600" />
+                </div>
+                <p className="font-semibold text-gray-800">Detta a voce</p>
+                <p className="text-gray-400 text-xs">Descrivi il lavoro parlando: l'AI trascrive tutto</p>
+              </button>
+
+              <button
+                onClick={() => setMetodo("mano")}
+                className="bg-white border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition rounded-2xl p-5 flex flex-col items-center text-center gap-2"
+              >
+                <div className="bg-orange-100 p-3 rounded-xl">
+                  <Edit3 size={24} className="text-orange-600" />
+                </div>
+                <p className="font-semibold text-gray-800">Scrivi a mano</p>
+                <p className="text-gray-400 text-xs">Digita tu la descrizione del lavoro</p>
+              </button>
+
+              <label className="bg-white border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition rounded-2xl p-5 flex flex-col items-center text-center gap-2 cursor-pointer">
+                <div className="bg-orange-100 p-3 rounded-xl">
+                  <Upload size={24} className="text-orange-600" />
+                </div>
+                <p className="font-semibold text-gray-800">Carica computo metrico</p>
+                <p className="text-gray-400 text-xs">PDF, JPG, JPEG o PNG: l'AI abbina ogni voce ai tuoi prezzi</p>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    e.target.value = "";
+                    handleComputo(files);
+                  }}
+                />
+              </label>
             </div>
-            <div className="text-left">
-              <p className="font-semibold text-gray-800">Carica computo metrico</p>
-              <p className="text-gray-400 text-xs">PDF, JPG, JPEG o PNG: l'AI abbina ogni voce ai tuoi prezzi</p>
-            </div>
-            <ChevronRight size={18} className="ml-auto text-gray-400" />
-            <input
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                e.target.value = "";
-                handleComputo(files);
-              }}
-            />
-          </label>
+          ) : (
+            <>
+              <button
+                onClick={() => setMetodo(null)}
+                className="text-xs text-gray-500 hover:text-orange-600 flex items-center gap-1"
+              >
+                <ArrowLeft size={14} /> Scegli un altro metodo
+              </button>
+              <VoiceRecorder key={metodo} modo={metodo} onTranscriptComplete={handleTranscript} />
+            </>
+          )}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-3">
               <p className="text-red-700 text-sm">{error}</p>
@@ -3697,7 +3722,7 @@ function GestioneAbbonamento({ onNavigate, subscriptionStatus, trialEnd, onShowP
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">Prezzo</span>
-              <span className="font-medium text-gray-800">47,00 EUR/mese</span>
+              <span className="font-medium text-gray-800">100,00 EUR/mese</span>
             </div>
             {getExpiryText() && (
               <div className="flex justify-between">
