@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { gunzipSync } from 'zlib';
+import { readFileSync } from 'fs';
+import path from 'path';
 
 const SUPABASE_URL = 'https://tahstkmfjiktnvlkcxfw.supabase.co';
 const supabaseAdmin = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -32,15 +34,25 @@ export default async function handler(req, res) {
     const cartella = CARTELLE[regione];
     if (!cartella) return res.status(400).json({ error: 'Regione non disponibile' });
 
-    const base = 'https://' + req.headers.host + '/prezzari/' + cartella + '/';
-    const indice = await fetch(base + 'indice.json').then(r => r.json());
+    // I file stanno nel bundle della funzione: le anteprime Vercel sono protette da login
+    // e una fetch sul proprio dominio verrebbe intercettata dalla pagina di accesso.
+    const leggi = (nome) => {
+      const tentativi = [
+        path.join(process.cwd(), 'api', '_prezzari', cartella, nome),
+        path.join(process.cwd(), '_prezzari', cartella, nome),
+      ];
+      for (const f of tentativi) {
+        try { return readFileSync(f); } catch (e) { /* prova il percorso successivo */ }
+      }
+      throw new Error('File del prezzario non trovato: ' + nome);
+    };
+
+    const indice = JSON.parse(leggi('indice.json').toString('utf8'));
 
     // Senza "parte" restituisce solo le informazioni sul prezzario da importare.
     if (!parte) return res.status(200).json({ indice });
 
-    const buf = await fetch(base + 'parte-' + String(parte).padStart(2, '0') + '.json.gz')
-      .then(r => r.arrayBuffer());
-    const voci = JSON.parse(gunzipSync(Buffer.from(buf)).toString('utf8'));
+    const voci = JSON.parse(gunzipSync(leggi('parte-' + String(parte).padStart(2, '0') + '.json.gz')).toString('utf8'));
 
     const righe = voci.map(v => ({
       regione: indice.regione,
