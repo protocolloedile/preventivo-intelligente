@@ -1832,6 +1832,8 @@ function QuoteEditor({ items, setItems, clientInfo, setClientInfo, onGeneratePDF
 // Deve restare allineata a ADMIN_EMAILS in api/importPrezzario.js.
 const ADMIN_PREZZARI = ["protocolloedile@gmail.com", "andreawii.ai@gmail.com"];
 
+const REGIONI_PREZZARIO = ["Lombardia", "Friuli-Venezia Giulia", "Abruzzo", "Sicilia"];
+
 const ETICHETTE_PREZZARIO = { materiale: "materiale", manodopera: "manodopera", nolo: "nolo", provvisionale: "opere provvisionali", altro: "altro" };
 
 const UNITA_PREZZARIO = { "m²": "mq", m2: "mq", "m³": "mc", m3: "mc", m: "ml", mt: "ml" };
@@ -1960,7 +1962,7 @@ function PrezzarioRegionale({ prices, setPrices, session }) {
         <>
           <form onSubmit={cerca} className="flex gap-2">
             <select value={regione} onChange={(e) => setRegione(e.target.value)} className="p-2 border border-gray-200 rounded-lg text-sm focus:outline-none">
-              <option value="Lombardia">Lombardia</option>
+              {REGIONI_PREZZARIO.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
             <input
               value={query}

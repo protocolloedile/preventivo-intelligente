@@ -10,7 +10,12 @@ const supabaseAdmin = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_RO
 const ADMIN_EMAILS = ['protocolloedile@gmail.com', 'andreawii.ai@gmail.com'];
 
 // Regione -> cartella dei dati in /public/prezzari
-const CARTELLE = { Lombardia: 'lombardia-2026' };
+const CARTELLE = {
+  Lombardia: 'lombardia-2026',
+  'Friuli-Venezia Giulia': 'friuli-2026',
+  Abruzzo: 'abruzzo-2026',
+  Sicilia: 'sicilia-2024',
+};
 
 const BATCH = 500;
 
