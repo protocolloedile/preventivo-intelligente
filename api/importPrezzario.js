@@ -12,6 +12,7 @@ const ADMIN_EMAILS = ['protocolloedile@gmail.com', 'andreawii.ai@gmail.com'];
 // Regione -> cartella dei dati in /public/prezzari
 const CARTELLE = {
   Lombardia: 'lombardia-2026',
+  Campania: 'campania-2026',
   Toscana: 'toscana-2026',
   Sardegna: 'sardegna-2026',
   Bolzano: 'bolzano-2025',
