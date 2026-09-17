@@ -545,8 +545,10 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
     email: userProfile?.email || "",
     telefono: userProfile?.telefono || "",
     indirizzo: userProfile?.indirizzo || "",
+    citta: userProfile?.citta || "",
+    cap: userProfile?.cap || "",
+    provincia: userProfile?.provincia || "",
     piva: userProfile?.piva || "",
-    codiceFiscale: userProfile?.codiceFiscale || "",
     logo: userProfile?.logo || ""
   });
   const [saved, setSaved] = useState(false);
@@ -567,8 +569,14 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
   };
 
   const handleSave = () => {
-    if (!form.nomeAzienda.trim()) {
-      alert("Inserisci il nome dell'azienda");
+    const obbligatori = [
+      ["nome", "Nome"], ["cognome", "Cognome"], ["nomeAzienda", "Nome Azienda"], ["piva", "Partita IVA"],
+      ["email", "Email"], ["telefono", "Telefono"], ["indirizzo", "Via e numero civico"],
+      ["citta", "Citt\u00E0"], ["cap", "CAP"], ["provincia", "Provincia"],
+    ];
+    const mancanti = obbligatori.filter(([campo]) => !String(form[campo] || "").trim()).map(([, etichetta]) => etichetta);
+    if (mancanti.length > 0) {
+      alert("Compila tutti i campi obbligatori: " + mancanti.join(", ") + ".\nSolo il logo \u00E8 facoltativo.");
       return;
     }
     setUserProfile({ ...form });
@@ -597,7 +605,7 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
 
       {/* Logo upload */}
       <div className="bg-white border border-gray-200 rounded-xl p-4">
-        <p className="text-xs text-gray-400 font-medium mb-3">LOGO AZIENDA</p>
+        <p className="text-xs text-gray-400 font-medium mb-3">LOGO AZIENDA (FACOLTATIVO)</p>
         <div className="flex items-center gap-4">
           {form.logo ? (
             <img src={form.logo} alt="Logo" className="w-16 h-16 rounded-xl object-cover border-2 border-orange-200" />
@@ -635,13 +643,13 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
           <input
             value={form.nome}
             onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
-            placeholder="Nome"
+            placeholder="Nome *"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
           />
           <input
             value={form.cognome}
             onChange={e => setForm(f => ({ ...f, cognome: e.target.value }))}
-            placeholder="Cognome"
+            placeholder="Cognome *"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
           />
         </div>
@@ -659,31 +667,46 @@ function ProfiloAzienda({ userProfile, setUserProfile, onNavigate }) {
         <input
           value={form.piva}
           onChange={e => setForm(f => ({ ...f, piva: e.target.value }))}
-          placeholder="Partita IVA"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
-        />
-        <input
-          value={form.codiceFiscale}
-          onChange={e => setForm(f => ({ ...f, codiceFiscale: e.target.value.toUpperCase() }))}
-          placeholder="Codice Fiscale"
+          placeholder="Partita IVA *"
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
         />
         <input
           value={form.email}
           onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-          placeholder="Email aziendale"
+          placeholder="Email aziendale *"
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
         />
         <input
           value={form.telefono}
           onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))}
-          placeholder="Telefono"
+          placeholder="Telefono *"
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
         />
         <input
           value={form.indirizzo}
           onChange={e => setForm(f => ({ ...f, indirizzo: e.target.value }))}
-          placeholder="Indirizzo sede"
+          placeholder="Via e numero civico *"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
+        />
+        <div className="grid grid-cols-3 gap-3">
+          <input
+            value={form.citta}
+            onChange={e => setForm(f => ({ ...f, citta: e.target.value }))}
+            placeholder="Città *"
+            className="col-span-2 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
+          />
+          <input
+            value={form.cap}
+            onChange={e => setForm(f => ({ ...f, cap: e.target.value.replace(/\D/g, "").slice(0, 5) }))}
+            placeholder="CAP *"
+            inputMode="numeric"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
+          />
+        </div>
+        <input
+          value={form.provincia}
+          onChange={e => setForm(f => ({ ...f, provincia: e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2) }))}
+          placeholder="Provincia, es. MI *"
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
         />
       </div>
@@ -3295,7 +3318,7 @@ function generatePDF(quote, userProfile, returnBlob = false) {
   const aziendaPiva = userProfile?.piva || "";
   const aziendaTel = userProfile?.telefono || "";
   const aziendaEmail = userProfile?.email || "";
-  const aziendaIndirizzo = userProfile?.indirizzo || "";
+  const aziendaIndirizzo = [userProfile?.indirizzo, [userProfile?.cap, userProfile?.citta].filter(Boolean).join(" "), userProfile?.provincia ? "(" + userProfile.provincia + ")" : ""].filter(Boolean).join(" ");
 
   const creaHtml = (righeFoto) => `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Preventivo - ${quote.cliente || "Cliente"}</title>
@@ -3306,6 +3329,7 @@ function generatePDF(quote, userProfile, returnBlob = false) {
       <div>
         <h1 style="margin:0;font-size:26px;color:#EA580C;font-weight:800;">${aziendaNome.toUpperCase()}</h1>
         ${aziendaPiva ? `<p style="margin:4px 0 0;color:#9CA3AF;font-size:11px;">P.IVA: ${aziendaPiva}</p>` : ""}
+        ${aziendaIndirizzo ? `<p style="margin:2px 0 0;color:#9CA3AF;font-size:11px;">${esc(aziendaIndirizzo)}</p>` : ""}
       </div>
     </div>
     <div style="text-align:right;">
@@ -3864,8 +3888,10 @@ export default function App({ session }) {
             email: profileData.email || "",
             telefono: profileData.telefono || "",
             indirizzo: profileData.indirizzo || "",
+            citta: profileData.citta || "",
+            cap: profileData.cap || "",
+            provincia: profileData.provincia || "",
             piva: profileData.piva || "",
-            codiceFiscale: profileData.codice_fiscale || "",
             logo: profileData.logo || "",
           });
         // Carica stato abbonamento
@@ -3955,7 +3981,7 @@ export default function App({ session }) {
     setUserProfile(profile);
     await supabase.from("profiles").upsert({
       id: session.user.id, nome: profile.nome, cognome: profile.cognome, nome_azienda: profile.nomeAzienda, email: profile.email,
-      telefono: profile.telefono, indirizzo: profile.indirizzo, piva: profile.piva, codice_fiscale: profile.codiceFiscale,
+      telefono: profile.telefono, indirizzo: profile.indirizzo, citta: profile.citta, cap: profile.cap, provincia: profile.provincia, piva: profile.piva,
       logo: profile.logo, updated_at: new Date().toISOString(),
     });
   };
@@ -4151,8 +4177,8 @@ export default function App({ session }) {
 
   const goToNuovoPreventivo = () => {
     const p = userProfile || {};
-    if (!p.nome || !p.cognome || !p.nomeAzienda || !p.piva || !p.email || !p.telefono || !p.indirizzo) {
-      alert("Completa il tuo profilo prima di creare un preventivo. Vai su Profilo Azienda e compila tutti i campi obbligatori (Nome, Cognome, Nome Azienda, P.IVA, Email, Telefono, Indirizzo).");
+    if (!p.nome || !p.cognome || !p.nomeAzienda || !p.piva || !p.email || !p.telefono || !p.indirizzo || !p.citta || !p.cap || !p.provincia) {
+      alert("Completa il tuo profilo prima di creare un preventivo. Vai su Profilo Azienda e compila tutti i campi obbligatori: Nome, Cognome, Nome Azienda, P.IVA, Email, Telefono e indirizzo completo (via, citt\u00E0, CAP, provincia).");
       setCurrentView("profilo");
       return;
     }

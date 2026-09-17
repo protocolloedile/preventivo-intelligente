@@ -63,7 +63,7 @@ export default function Auth() {
     }
     setLoading(true);
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -75,8 +75,10 @@ export default function Auth() {
         }
       });
       if (signUpError) throw signUpError;
-      setMessage("Registrazione completata! Controlla la tua email per confermare l'account.");
-      setMode("login");
+      if (!data?.session) {
+        setMessage("Registrazione completata! Ora puoi accedere.");
+        setMode("login");
+      }
     } catch (err) {
       setError(err.message);
     }
